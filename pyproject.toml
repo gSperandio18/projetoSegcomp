@@ -1,0 +1,39 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "secure-evoting-system"
+version = "1.0.0"
+description = "Verifiable Electronic Voting System using Exponential ElGamal & RSA Signatures"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "cryptography>=41.0.0",
+    "sqlalchemy>=2.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.4.0",
+    "pytest-cov>=4.1.0",
+    "ruff>=0.1.0",
+    "pylint>=3.0.0",
+    "pre-commit>=3.5.0",
+    "mkdocs>=1.5.0",
+    "mkdocs-material>=9.4.0",
+]
+
+[tool.ruff]
+line-length = 100
+select = ["E", "F", "W", "C90", "I", "N", "UP", "B", "A"]
+ignore = []
+target-version = "py310"
+
+[tool.pylint.main]
+max-line-length = 100
+disable = ["C0114", "C0115", "C0116"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "--cov=src/evoting --cov-report=term-missing --cov-report=html --cov-fail-under=80"
