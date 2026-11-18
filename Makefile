@@ -9,7 +9,7 @@ MKDOCS := mkdocs
 
 help:
 	@echo "========================================================================"
-	@echo "        SECURE E-VOTING SYSTEM - AUTOMATION MAKEFILE"
+	@echo "        SECURE E-VOTING SYSTEM - AUTOMATION MAKEFILE (SEGCOMP 2026)"
 	@echo "========================================================================"
 	@echo "  make install     : Install main and development dependencies"
 	@echo "  make lint        : Run code quality linters (Ruff + Pylint)"
@@ -48,14 +48,20 @@ docs-build:
 
 db-init:
 	$(PYTHON) -c "from evoting.storage.database import init_db; init_db()"
+	@echo "Election SQLite database initialized successfully."
 
 run-demo:
-	$(PYTHON) bin/election_cli.py
+	PYTHONPATH=src $(PYTHON) bin/election_cli.py
 
 run-audit:
-	$(PYTHON) bin/audit_cli.py --board data/bulletin_board.json --public-keys data/auth_pubkeys.json
+	PYTHONPATH=src $(PYTHON) bin/audit_cli.py --demo
 
 clean:
-	rm -rf .pytest_cache .coverage htmlcov site build dist *.egg-info
+	rm -rf build/ dist/ *.egg-info .eggs/
+	rm -rf .pytest_cache/ htmlcov/ .coverage coverage.xml
+	rm -rf .ruff_cache/
+	rm -rf site/
+	rm -f election.db audit_report.json
 	find . -type d -name "__pycache__" -exec rm -rf {} +
-	find . -type f -name "*.pyc" -exec rm -f {} +
+	find . -type f -name "*.py[cod]" -delete
+	@echo "Workspace cleaned successfully."

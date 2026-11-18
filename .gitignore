@@ -1,8 +1,9 @@
-# Python artifacts
+# Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
 *$py.class
-*.so
+
+# Distribution / packaging
 .Python
 build/
 develop-eggs/
@@ -26,31 +27,42 @@ MANIFEST
 venv/
 .venv/
 env/
-.env/
+ENV/
 env.bak/
 venv.bak/
 
 # Testing & Coverage
+.tox/
+.nox/
 .coverage
 .coverage.*
+.cache
+nosetests.xml
+coverage.xml
 *.cover
+*.py,cover
 .hypothesis/
 .pytest_cache/
 htmlcov/
-coverage.xml
 
-# Documentation build output
+# Linters & Type Checkers
+.ruff_cache/
+.mypy_cache/
+
+# Documentation builds
 site/
 
-# IDE & Editor files
+# SQLite databases & temp election data
+*.db
+*.sqlite
+*.sqlite3
+election.db
+audit_report.json
+
+# IDEs & Editors
 .vscode/
 .idea/
 *.swp
 *.swo
-
-# Local SQLite databases and election output data
-*.db
-*.sqlite
-*.sqlite3
-data/*.json
-!data/.gitkeep
+*~
+.DS_Store

@@ -36,4 +36,5 @@ disable = ["C0114", "C0115", "C0116"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+pythonpath = ["src"]
 addopts = "--cov=src/evoting --cov-report=term-missing --cov-report=html --cov-fail-under=80"
