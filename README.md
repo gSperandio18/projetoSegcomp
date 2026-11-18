@@ -113,7 +113,6 @@ pytest --cov=src/evoting --cov-report=term-missing --cov-fail-under=80
 Para garantir conformidade com a PEP 8 e prevenir vulnerabilidades, o repositório utiliza:
 - **Ruff:** Linter e formatador de alta performance configurado em `pyproject.toml` (tamanho máximo de linha: 100 caracteres).
 - **Pylint:** Análise estática profunda em `src/evoting`.
-- **Pre-commit:** Ganchos automáticos de Git para verificar formatação, espaços em branco e arquivos YAML antes de cada commit.
 
 ```bash
 # Executar verificação estática
