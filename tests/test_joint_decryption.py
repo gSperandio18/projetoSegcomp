@@ -6,6 +6,7 @@ Assigned to: Integrante 3 (Dev C)
 """
 
 import pytest
+
 from evoting.authority import AuthorityDTO, ElectionAuthority
 from evoting.config.params import MODP_2048_G, MODP_2048_P
 from evoting.crypto.dkg import (

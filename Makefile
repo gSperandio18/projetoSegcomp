@@ -26,15 +26,14 @@ help:
 install:
 	$(PIP) install --upgrade pip
 	$(PIP) install -e .[dev]
-	pre-commit install
 
 lint:
 	$(RUFF) check src tests bin
 	$(PYLINT) src/evoting
 
 format:
-	$(RUFF) format src tests bin
 	$(RUFF) check --fix src tests bin
+	$(RUFF) format src tests bin
 
 test:
 	$(PYTEST)

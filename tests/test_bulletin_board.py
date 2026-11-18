@@ -7,6 +7,7 @@ Assigned to: Integrante 4 (Dev D)
 
 import pytest
 from cryptography.hazmat.primitives.asymmetric import rsa
+
 from evoting.bulletin_board import (
     AppendOnlyBulletinBoard,
     BulletinBlock,

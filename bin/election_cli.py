@@ -13,6 +13,7 @@ Executes a complete 8-stage electronic voting demonstration covering:
 """
 
 from cryptography.hazmat.primitives.asymmetric import rsa
+
 from evoting.authority import ElectionAuthority
 from evoting.bulletin_board import AppendOnlyBulletinBoard
 from evoting.config.params import (

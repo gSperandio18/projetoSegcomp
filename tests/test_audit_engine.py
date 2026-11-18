@@ -6,6 +6,7 @@ Assigned to: Integrante 5 (Dev E)
 """
 
 import pytest
+
 from evoting.auditor import AuditReport, ElectionAuditor
 from evoting.config.params import (
     MIN_AUTHORITIES,

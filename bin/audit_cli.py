@@ -15,6 +15,7 @@ import sys
 from typing import Any
 
 from cryptography.hazmat.primitives.asymmetric import rsa
+
 from evoting.auditor import AuditReport, ElectionAuditor
 from evoting.bulletin_board import AppendOnlyBulletinBoard
 from evoting.config.params import DEFAULT_DATABASE_PATH, MODP_2048_G, MODP_2048_P
