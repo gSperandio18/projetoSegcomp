@@ -5,10 +5,9 @@ and Non-repudiation in Electronic Voting.
 Assigned to: Integrante 1 (Dev A)
 """
 
-import json
-from typing import Any, Dict, Set, Tuple
-from cryptography.hazmat.primitives import hashes
-from cryptography.hazmat.primitives.asymmetric import padding, rsa
+from typing import Any
+
+from cryptography.hazmat.primitives.asymmetric import rsa
 
 from evoting.config.params import DEFAULT_RSA_KEY_SIZE, DEFAULT_RSA_PUBLIC_EXPONENT
 
@@ -16,7 +15,7 @@ from evoting.config.params import DEFAULT_RSA_KEY_SIZE, DEFAULT_RSA_PUBLIC_EXPON
 def generate_voter_rsa_keypair(
     key_size: int = DEFAULT_RSA_KEY_SIZE,
     public_exponent: int = DEFAULT_RSA_PUBLIC_EXPONENT,
-) -> Tuple[rsa.RSAPrivateKey, rsa.RSAPublicKey]:
+) -> tuple[rsa.RSAPrivateKey, rsa.RSAPublicKey]:
     """Generate an RSA keypair for a registered voter.
 
     Parameters
@@ -56,7 +55,7 @@ def generate_voter_rsa_keypair(
     )
 
 
-def canonicalize_payload(payload: Dict[str, Any]) -> bytes:
+def canonicalize_payload(payload: dict[str, Any]) -> bytes:
     """Serialize a dictionary into a deterministic canonical UTF-8 byte stream.
 
     Parameters
@@ -88,13 +87,13 @@ def canonicalize_payload(payload: Dict[str, Any]) -> bytes:
     """
     # TODO: Implement deterministic JSON canonicalization
     raise NotImplementedError(
-        "TODO (Module 1 - Dev A): Implement canonicalize_payload with sorted keys and compact separators."
+        "TODO (Module 1 - Dev A): Implement canonicalize_payload with sorted keys."
     )
 
 
 def sign_ballot_payload(
     private_key: rsa.RSAPrivateKey,
-    payload: Dict[str, Any],
+    payload: dict[str, Any],
 ) -> bytes:
     """Digitally sign a canonicalized ballot payload using RSA-PSS and SHA-256.
 
@@ -125,7 +124,7 @@ def sign_ballot_payload(
     TODO (Module 1 - Dev A):
     1. Canonicalize payload to bytes using `canonicalize_payload(payload)`.
     2. Sign data using `private_key.sign()`:
-       - padding: `padding.PSS(mgf=padding.MGF1(hashes.SHA256()), salt_length=padding.PSS.MAX_LENGTH)`
+       - padding: `padding.PSS(mgf=padding.MGF1(hashes.SHA256()), salt_length=...)`
        - algorithm: `hashes.SHA256()`
     3. Return the signature bytes.
     """
@@ -138,7 +137,7 @@ def sign_ballot_payload(
 def verify_ballot_signature(
     public_key: rsa.RSAPublicKey,
     signature: bytes,
-    payload: Dict[str, Any],
+    payload: dict[str, Any],
 ) -> bool:
     """Verify an RSA-PSS digital signature against a ballot payload.
 
@@ -168,20 +167,20 @@ def verify_ballot_signature(
 
     TODO (Module 1 - Dev A):
     1. Canonicalize payload using `canonicalize_payload(payload)`.
-    2. In a try-except block, invoke `public_key.verify(signature, data, padding, hashes.SHA256())`.
+    2. In a try-except block, invoke `public_key.verify(...)`.
     3. Return True if verification succeeds; catch `InvalidSignature` and return False.
     """
     # TODO: Implement RSA-PSS signature verification
     raise NotImplementedError(
-        "TODO (Module 1 - Dev A): Implement verify_ballot_signature with InvalidSignature exception handling."
+        "TODO (Module 1 - Dev A): Implement verify_ballot_signature with InvalidSignature handling."
     )
 
 
 def check_voter_eligibility_and_unicity(
     voter_id: str,
-    registered_voters: Set[str],
-    cast_voters: Set[str],
-) -> Tuple[bool, str]:
+    registered_voters: set[str],
+    cast_voters: set[str],
+) -> tuple[bool, str]:
     """Enforce eligibility and the single-vote invariant for an incoming ballot.
 
     Parameters

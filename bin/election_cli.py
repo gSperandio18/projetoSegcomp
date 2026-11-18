@@ -12,10 +12,7 @@ Executes a complete 8-stage electronic voting demonstration covering:
   Stage 8: Final Decryption & Result Announcement
 """
 
-import sys
-from typing import Dict, List
 from cryptography.hazmat.primitives.asymmetric import rsa
-
 from evoting.authority import ElectionAuthority
 from evoting.bulletin_board import AppendOnlyBulletinBoard
 from evoting.config.params import (
@@ -51,7 +48,7 @@ def main() -> None:
     print(f"[*] Subgroup Generator (g): {g}")
 
     # Initialize 3 Authorities
-    authorities: List[ElectionAuthority] = [
+    authorities: list[ElectionAuthority] = [
         ElectionAuthority(1, p, g, name="Tribunal Regional Eleitoral - Alpha"),
         ElectionAuthority(2, p, g, name="Comitê de Auditoria Independente - Beta"),
         ElectionAuthority(3, p, g, name="Conselho Universitário SegComp - Gamma"),
@@ -74,7 +71,7 @@ def main() -> None:
     )
     server_pubkey = server_privkey.public_key()
     bulletin_board = AppendOnlyBulletinBoard()
-    registered_voters: Dict[str, rsa.RSAPublicKey] = {}
+    registered_voters: dict[str, rsa.RSAPublicKey] = {}
 
     print_section("STAGE 2: Voter Registration & RSA Keypair Setup")
     voters = [Voter(f"voter_00{i}") for i in range(1, 4)]
@@ -102,7 +99,7 @@ def main() -> None:
 
     for idx, v in enumerate(voters):
         choices = vote_choices[idx]
-        encrypted_ballot: Dict[str, Dict[str, int]] = {}
+        encrypted_ballot: dict[str, dict[str, int]] = {}
 
         try:
             for candidate, vote_bit in choices.items():
@@ -147,7 +144,7 @@ def main() -> None:
     print_section("STAGE 4: Live Demo Requirement — Unicity Violation Test")
     print("[*] Attempting to cast a SECOND ballot using voter_001 credentials...")
     if voters[0].voter_id in cast_voters:
-        print(f"[✓] SUCCESSFUL REJECTION: Double voting detected for {voters[0].voter_id}. Ballot blocked.")
+        print(f"[✓] SUCCESSFUL REJECTION: Double voting detected for {voters[0].voter_id}.")
 
     print_section("STAGE 5: Live Demo Requirement — Bulletin Board Tamper Detection")
     print("[*] Simulating malicious database admin altering Block #1 ballot data...")
@@ -189,8 +186,12 @@ def main() -> None:
     print_section("STAGE 7: Live Demo Requirement — Incomplete Authority Decryption Test")
     print("[*] Attempting to decrypt Alice's tally using ONLY Authority 1 & Authority 2 shares...")
     try:
-        s1_partial = compute_partial_decryption_share(alice_tally_cipher, authorities[0]._private_key_x, p)
-        s2_partial = compute_partial_decryption_share(alice_tally_cipher, authorities[1]._private_key_x, p)
+        s1_partial = compute_partial_decryption_share(
+            alice_tally_cipher, authorities[0]._private_key_x, p
+        )
+        s2_partial = compute_partial_decryption_share(
+            alice_tally_cipher, authorities[1]._private_key_x, p
+        )
         combine_decryption_shares_and_recover(
             alice_tally_cipher, [s1_partial, s2_partial], p, g, max_expected_votes=10
         )
@@ -202,23 +203,35 @@ def main() -> None:
 
     print_section("STAGE 8: Final Decryption & Result Announcement")
     try:
-        s1_partial = compute_partial_decryption_share(alice_tally_cipher, authorities[0]._private_key_x, p)
-        s2_partial = compute_partial_decryption_share(alice_tally_cipher, authorities[1]._private_key_x, p)
-        s3_partial = compute_partial_decryption_share(alice_tally_cipher, authorities[2]._private_key_x, p)
+        s1_partial = compute_partial_decryption_share(
+            alice_tally_cipher, authorities[0]._private_key_x, p
+        )
+        s2_partial = compute_partial_decryption_share(
+            alice_tally_cipher, authorities[1]._private_key_x, p
+        )
+        s3_partial = compute_partial_decryption_share(
+            alice_tally_cipher, authorities[2]._private_key_x, p
+        )
 
         alice_total = combine_decryption_shares_and_recover(
             alice_tally_cipher, [s1_partial, s2_partial, s3_partial], p, g
         )
 
-        bob_s1 = compute_partial_decryption_share(bob_tally_cipher, authorities[0]._private_key_x, p)
-        bob_s2 = compute_partial_decryption_share(bob_tally_cipher, authorities[1]._private_key_x, p)
-        bob_s3 = compute_partial_decryption_share(bob_tally_cipher, authorities[2]._private_key_x, p)
+        bob_s1 = compute_partial_decryption_share(
+            bob_tally_cipher, authorities[0]._private_key_x, p
+        )
+        bob_s2 = compute_partial_decryption_share(
+            bob_tally_cipher, authorities[1]._private_key_x, p
+        )
+        bob_s3 = compute_partial_decryption_share(
+            bob_tally_cipher, authorities[2]._private_key_x, p
+        )
 
         bob_total = combine_decryption_shares_and_recover(
             bob_tally_cipher, [bob_s1, bob_s2, bob_s3], p, g
         )
 
-        print(f"[★] FINAL ELECTION RESULTS:")
+        print("[★] FINAL ELECTION RESULTS:")
         print(f"    - Alice Total Votes: {alice_total}")
         print(f"    - Bob Total Votes:   {bob_total}")
         assert alice_total == 2
@@ -226,7 +239,7 @@ def main() -> None:
         print("[✓] ALL ELECTION INVARIANTS AND CRYPTOGRAPHIC PROOFS VERIFIED SUCCESSFULLY!")
     except NotImplementedError as e:
         print(f"[!] STUB NOTICE (Module 3): {e}")
-        print("[*] Scaffolding orchestration completed cleanly. Awaiting cryptographic stubs completion.")
+        print("[*] Scaffolding orchestration completed cleanly. Awaiting stubs completion.")
 
 
 if __name__ == "__main__":

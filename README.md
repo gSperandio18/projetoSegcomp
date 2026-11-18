@@ -5,7 +5,7 @@
 [![Code Style: Ruff](https://img.shields.io/badge/code%20style-ruff-000000.svg)](https://github.com/astral-sh/ruff)
 [![Coverage: >=80%](https://img.shields.io/badge/coverage-%3E%3D80%25-green.svg)](https://pytest-cov.readthedocs.io/)
 
-Projeto prático desenvolvido para a disciplina de **Segurança Computacional (SegComp)**.  
+Projeto prático desenvolvido para a disciplina de **Segurança Computacional (SegComp)**.
 **Prazo Final de Entrega:** 23 de Novembro de 2026.
 
 ---

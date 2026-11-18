@@ -5,11 +5,11 @@ educational cryptographic stubs for server-signed receipts.
 Assigned to: Integrante 4 (Dev D)
 """
 
-from dataclasses import asdict, dataclass
 import json
-from typing import Any, Dict
-from cryptography.hazmat.primitives import hashes
-from cryptography.hazmat.primitives.asymmetric import padding, rsa
+from dataclasses import asdict, dataclass
+from typing import Any
+
+from cryptography.hazmat.primitives.asymmetric import rsa
 
 from evoting.bulletin_board import BulletinBlock
 
@@ -32,7 +32,7 @@ class VoterReceipt:
     server_signature_hex: str
     issued_at: str
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert receipt to dictionary representation."""
         return asdict(self)
 
@@ -41,7 +41,7 @@ class VoterReceipt:
         return json.dumps(self.to_dict(), indent=2)
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "VoterReceipt":
+    def from_dict(cls, data: dict[str, Any]) -> "VoterReceipt":
         """Reconstruct receipt from dictionary."""
         return cls(
             receipt_id=str(data["receipt_id"]),
@@ -83,7 +83,8 @@ def issue_voter_receipt(
     - Deterministic message formatting prevents receipt forgery.
 
     TODO (Module 4 - Dev D):
-    1. Construct canonical message bytes: `f"{block.index}:{block.block_hash}:{block.voter_id}".encode("utf-8")`.
+    1. Construct canonical message bytes:
+       `f"{block.index}:{block.block_hash}:{block.voter_id}".encode("utf-8")`.
     2. Sign message bytes using `server_private_key.sign(msg, padding.PSS(...), hashes.SHA256())`.
     3. Construct and return `VoterReceipt`.
     """
@@ -112,7 +113,8 @@ def verify_receipt(
         True if the signature is valid; False otherwise.
 
     TODO (Module 4 - Dev D):
-    1. Reconstruct canonical message bytes: `f"{receipt.block_index}:{receipt.block_hash}:{receipt.voter_id}".encode("utf-8")`.
+    1. Reconstruct canonical message bytes:
+       `f"{receipt.block_index}:{receipt.block_hash}:{receipt.voter_id}".encode("utf-8")`.
     2. Decode signature from hex bytes: `bytes.fromhex(receipt.server_signature_hex)`.
     3. In a try-except block, call `server_public_key.verify(...)`.
     4. Return True on success; return False if `InvalidSignature` caught.

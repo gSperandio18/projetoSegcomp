@@ -12,9 +12,9 @@ import argparse
 import json
 import os
 import sys
-from typing import Any, Dict, List
-from cryptography.hazmat.primitives.asymmetric import rsa
+from typing import Any
 
+from cryptography.hazmat.primitives.asymmetric import rsa
 from evoting.auditor import AuditReport, ElectionAuditor
 from evoting.bulletin_board import AppendOnlyBulletinBoard
 from evoting.config.params import DEFAULT_DATABASE_PATH, MODP_2048_G, MODP_2048_P
@@ -45,8 +45,8 @@ def print_audit_report(report: AuditReport) -> None:
         print(format_table_row(item.name, status_str, item.details[:22]))
 
     print(sub_border)
-    overall_status = "VERIFIED (AUTHENTIC)" if report.overall_passed else "REJECTED (OR STUB PENDING)"
-    print(f"  OVERALL AUDIT VERDICT: {overall_status}")
+    verdict = "VERIFIED (AUTHENTIC)" if report.overall_passed else "REJECTED (OR STUB PENDING)"
+    print(f"  OVERALL AUDIT VERDICT: {verdict}")
     print(f"{border}\n")
 
 
@@ -54,7 +54,7 @@ def run_demo_audit() -> int:
     """Execute simulated audit flow for demonstration and testing."""
     print("[*] Running simulated zero-trust audit flow against sample election data...")
     board = AppendOnlyBulletinBoard()
-    voters: Dict[str, rsa.RSAPublicKey] = {}
+    voters: dict[str, rsa.RSAPublicKey] = {}
 
     auditor = ElectionAuditor(
         bulletin_blocks=[b.to_dict() for b in board.chain],
@@ -115,10 +115,10 @@ def main() -> None:
     if args.demo:
         sys.exit(run_demo_audit())
 
-    blocks_data: List[Dict[str, Any]] = []
+    blocks_data: list[dict[str, Any]] = []
 
     if args.board_json and os.path.exists(args.board_json):
-        with open(args.board_json, "r", encoding="utf-8") as f:
+        with open(args.board_json, encoding="utf-8") as f:
             blocks_data = json.load(f)
     elif os.path.exists(args.db_path):
         with get_db_session(args.db_path) as session:

@@ -4,8 +4,6 @@ Educational stubs and mathematical definitions for large prime field arithmetic.
 Provides low-level functions used across ElGamal encryption, DKG, and verification.
 """
 
-from typing import Optional
-
 
 def mod_pow(base: int, exp: int, mod: int) -> int:
     """Compute modular exponentiation: (base^exp) mod mod.

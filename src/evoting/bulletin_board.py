@@ -5,13 +5,12 @@ persistence hooks alongside educational SHA-256 hash-chaining stubs.
 Assigned to: Integrante 4 (Dev D)
 """
 
+import json
 from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
-import json
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from evoting.config.params import GENESIS_PREVIOUS_HASH
-from evoting.crypto.rsa import canonicalize_payload
 from evoting.storage.database import get_db_session, save_bulletin_block
 
 
@@ -41,16 +40,16 @@ class BulletinBlock:
     previous_hash: str
     block_hash: str
     voter_id: str
-    ballot_data: Dict[str, Any]
+    ballot_data: dict[str, Any]
     voter_signature_hex: str
     timestamp: str
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert block to dictionary format."""
         return asdict(self)
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "BulletinBlock":
+    def from_dict(cls, data: dict[str, Any]) -> "BulletinBlock":
         """Deserialize block from dictionary."""
         return cls(
             index=int(data["index"]),
@@ -67,7 +66,7 @@ def compute_block_hash(
     previous_hash: str,
     index: int,
     voter_id: str,
-    ballot_data: Dict[str, Any],
+    ballot_data: dict[str, Any],
     voter_signature_hex: str,
     timestamp: str,
 ) -> str:
@@ -120,9 +119,9 @@ def compute_block_hash(
 class AppendOnlyBulletinBoard:
     """Public, verifiable, append-only bulletin board ledger."""
 
-    def __init__(self, db_path: Optional[str] = None) -> None:
-        self.db_path: Optional[str] = db_path
-        self.chain: List[BulletinBlock] = []
+    def __init__(self, db_path: str | None = None) -> None:
+        self.db_path: str | None = db_path
+        self.chain: list[BulletinBlock] = []
         self._init_genesis()
 
     def _init_genesis(self) -> None:
@@ -154,7 +153,7 @@ class AppendOnlyBulletinBoard:
     def append_ballot(
         self,
         voter_id: str,
-        encrypted_ballot: Dict[str, Any],
+        encrypted_ballot: dict[str, Any],
         signature_bytes: bytes,
     ) -> BulletinBlock:
         """Append a newly cast and authenticated ballot to the bulletin board.
@@ -175,7 +174,10 @@ class AppendOnlyBulletinBoard:
         """
         prev_block = self.chain[-1]
         new_index = len(self.chain)
-        sig_hex = signature_bytes.hex() if isinstance(signature_bytes, bytes) else str(signature_bytes)
+        if isinstance(signature_bytes, bytes):
+            sig_hex = signature_bytes.hex()
+        else:
+            sig_hex = str(signature_bytes)
         now = datetime.now(timezone.utc).isoformat()
 
         try:
@@ -248,7 +250,7 @@ class AppendOnlyBulletinBoard:
         """Export full ledger chain to JSON string."""
         return json.dumps([b.to_dict() for b in self.chain], indent=2)
 
-    def load_from_list(self, blocks: List[Dict[str, Any]]) -> None:
+    def load_from_list(self, blocks: list[dict[str, Any]]) -> None:
         """Load bulletin board chain from list of block dictionaries."""
         self.chain = [BulletinBlock.from_dict(b) for b in blocks]
 

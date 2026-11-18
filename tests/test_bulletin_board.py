@@ -5,10 +5,8 @@ TDD test specifications for hash-chain continuity and coercion-resistant receipt
 Assigned to: Integrante 4 (Dev D)
 """
 
-import json
 import pytest
 from cryptography.hazmat.primitives.asymmetric import rsa
-
 from evoting.bulletin_board import (
     AppendOnlyBulletinBoard,
     BulletinBlock,

@@ -6,8 +6,6 @@ Assigned to: Integrante 2 (Dev B)
 """
 
 from dataclasses import dataclass
-import secrets
-from typing import Dict, List, Optional
 
 from evoting.config.params import MODP_2048_G, MODP_2048_P
 
@@ -27,12 +25,12 @@ class EncryptedVote:
     c1: int
     c2: int
 
-    def to_dict(self) -> Dict[str, int]:
+    def to_dict(self) -> dict[str, int]:
         """Serialize ciphertext pair to standard dictionary format."""
         return {"c1": self.c1, "c2": self.c2}
 
     @classmethod
-    def from_dict(cls, data: Dict[str, int]) -> "EncryptedVote":
+    def from_dict(cls, data: dict[str, int]) -> "EncryptedVote":
         """Deserialize ciphertext pair from dictionary."""
         return cls(c1=int(data["c1"]), c2=int(data["c2"]))
 
@@ -77,7 +75,7 @@ def encrypt_vote(
     joint_public_key_h: int,
     p: int = MODP_2048_P,
     g: int = MODP_2048_G,
-    blinding_factor_r: Optional[int] = None,
+    blinding_factor_r: int | None = None,
 ) -> EncryptedVote:
     """Encrypt a binary vote bit m in {0, 1} using Exponential ElGamal.
 
@@ -135,7 +133,7 @@ def encrypt_vote(
 
 
 def homomorphic_multiply_ciphertexts(
-    ciphers: List[EncryptedVote],
+    ciphers: list[EncryptedVote],
     p: int = MODP_2048_P,
 ) -> EncryptedVote:
     """Homomorphically aggregate multiple ElGamal ciphertexts via modular multiplication.

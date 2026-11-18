@@ -6,7 +6,8 @@ Assigned to: Integrante 1 (Dev A)
 """
 
 from dataclasses import dataclass
-from typing import Any, Dict, Optional
+from typing import Any
+
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
 
@@ -25,7 +26,7 @@ class VoterRegistrationDTO:
     public_key_pem: str
     has_voted: bool = False
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert DTO to dictionary representation."""
         return {
             "voter_id": self.voter_id,
@@ -47,8 +48,8 @@ class Voter:
 
     def __init__(self, voter_id: str, generate_keys: bool = True) -> None:
         self.voter_id: str = voter_id
-        self._private_key: Optional[rsa.RSAPrivateKey] = None
-        self._public_key: Optional[rsa.RSAPublicKey] = None
+        self._private_key: rsa.RSAPrivateKey | None = None
+        self._public_key: rsa.RSAPublicKey | None = None
         self.public_key_pem: str = ""
 
         if generate_keys:
@@ -67,12 +68,12 @@ class Voter:
             self.public_key_pem = f"PENDING_RSA_IMPLEMENTATION_FOR_{self.voter_id}"
 
     @property
-    def private_key(self) -> Optional[rsa.RSAPrivateKey]:
+    def private_key(self) -> rsa.RSAPrivateKey | None:
         """Access the voter's private signing key."""
         return self._private_key
 
     @property
-    def public_key(self) -> Optional[rsa.RSAPublicKey]:
+    def public_key(self) -> rsa.RSAPublicKey | None:
         """Access the voter's public verification key."""
         return self._public_key
 
@@ -86,7 +87,7 @@ class Voter:
         )
         return pem_bytes.decode("utf-8")
 
-    def sign_ballot(self, ballot_payload: Dict[str, Any]) -> bytes:
+    def sign_ballot(self, ballot_payload: dict[str, Any]) -> bytes:
         """Digitally sign an encrypted ballot payload.
 
         Parameters
@@ -106,7 +107,7 @@ class Voter:
             )
         return sign_ballot_payload(self._private_key, ballot_payload)
 
-    def persist_registration(self, db_path: Optional[str] = None) -> VoterRegistrationDTO:
+    def persist_registration(self, db_path: str | None = None) -> VoterRegistrationDTO:
         """Save voter registration credentials to the election database."""
         dto = VoterRegistrationDTO(
             voter_id=self.voter_id,

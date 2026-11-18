@@ -26,13 +26,36 @@ dev = [
 
 [tool.ruff]
 line-length = 100
-select = ["E", "F", "W", "C90", "I", "N", "UP", "B", "A"]
-ignore = []
 target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "C90", "I", "N", "UP", "B", "A"]
+# E501: handled by ruff format
+# A003: class attribute `id` in SQLAlchemy models shadows Python builtin `id`
+ignore = ["E501", "A003"]
+
+[tool.ruff.lint.mccabe]
+max-complexity = 20
+
+[tool.ruff.lint.per-file-ignores]
+"bin/*" = ["C901"]
 
 [tool.pylint.main]
 max-line-length = 100
-disable = ["C0114", "C0115", "C0116"]
+fail-under = 8.5
+
+[tool.pylint."messages control"]
+disable = [
+    "C0114",  # missing-module-docstring
+    "C0115",  # missing-class-docstring
+    "C0116",  # missing-function-docstring
+    "W0511",  # fixme: allows pedagogical # TODO: comments for students
+    "R0903",  # too-few-public-methods: expected for SQLAlchemy ORM data models
+    "R0801",  # duplicate-code: __all__ package exports across __init__.py
+    "R0913",  # too-many-arguments: cryptographic parameters and DB helpers
+    "R0917",  # too-many-positional-arguments
+    "R0902",  # too-many-instance-attributes: central election server state
+]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

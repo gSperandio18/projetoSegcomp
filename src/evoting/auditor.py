@@ -5,9 +5,10 @@ formatting alongside educational zero-trust verification stubs.
 Assigned to: Integrante 5 (Dev E)
 """
 
-from dataclasses import asdict, dataclass, field
 import json
-from typing import Any, Dict, List, Optional
+from dataclasses import asdict, dataclass, field
+from typing import Any
+
 from cryptography.hazmat.primitives.asymmetric import rsa
 
 from evoting.config.params import MODP_2048_G, MODP_2048_P
@@ -21,7 +22,7 @@ class AuditCheckItem:
     name: str
     passed: bool
     details: str
-    error: Optional[str] = None
+    error: str | None = None
 
 
 @dataclass
@@ -30,12 +31,10 @@ class AuditReport:
 
     election_id: str
     overall_passed: bool = False
-    checks: List[AuditCheckItem] = field(default_factory=list)
-    recomputed_tallies: Dict[str, int] = field(default_factory=dict)
+    checks: list[AuditCheckItem] = field(default_factory=list)
+    recomputed_tallies: dict[str, int] = field(default_factory=dict)
 
-    def add_check(
-        self, name: str, passed: bool, details: str, error: Optional[str] = None
-    ) -> None:
+    def add_check(self, name: str, passed: bool, details: str, error: str | None = None) -> None:
         """Append an audit check outcome."""
         self.checks.append(AuditCheckItem(name=name, passed=passed, details=details, error=error))
 
@@ -44,7 +43,7 @@ class AuditReport:
         self.overall_passed = len(self.checks) > 0 and all(c.passed for c in self.checks)
         return self.overall_passed
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert report to dictionary format."""
         return asdict(self)
 
@@ -58,8 +57,8 @@ class ElectionAuditor:
 
     def __init__(
         self,
-        bulletin_blocks: List[Dict[str, Any]],
-        voter_registry: Dict[str, rsa.RSAPublicKey],
+        bulletin_blocks: list[dict[str, Any]],
+        voter_registry: dict[str, rsa.RSAPublicKey],
         p: int = MODP_2048_P,
         g: int = MODP_2048_G,
     ) -> None:
@@ -111,8 +110,8 @@ class ElectionAuditor:
 
     def audit_homomorphic_tally_aggregation(
         self,
-        candidates: List[str],
-    ) -> Dict[str, EncryptedVote]:
+        candidates: list[str],
+    ) -> dict[str, EncryptedVote]:
         """Recompute homomorphic product C1_total and C2_total for all candidates.
 
         Parameters
@@ -137,9 +136,9 @@ class ElectionAuditor:
 
     def audit_decryption_shares_and_results(
         self,
-        tally_ciphers: Dict[str, EncryptedVote],
-        candidate_shares: Dict[str, List[int]],
-        announced_results: Dict[str, int],
+        tally_ciphers: dict[str, EncryptedVote],
+        candidate_shares: dict[str, list[int]],
+        announced_results: dict[str, int],
     ) -> AuditCheckItem:
         """Verify that combining authority decryption shares reproduces the announced results.
 
@@ -161,9 +160,9 @@ class ElectionAuditor:
 
     def run_full_audit(
         self,
-        candidates: List[str],
-        candidate_shares: Dict[str, List[int]],
-        announced_results: Dict[str, int],
+        candidates: list[str],
+        candidate_shares: dict[str, list[int]],
+        announced_results: dict[str, int],
         election_id: str = "election_2026",
     ) -> AuditReport:
         """Execute the complete zero-trust independent audit suite."""
@@ -188,7 +187,9 @@ class ElectionAuditor:
             )
             report.checks.append(c3)
         except NotImplementedError as e:
-            report.add_check("Homomorphic Tally & Decryption", False, "Stub not implemented", str(e))
+            report.add_check(
+                "Homomorphic Tally & Decryption", False, "Stub not implemented", str(e)
+            )
 
         report.evaluate_overall()
         return report

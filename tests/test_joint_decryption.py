@@ -6,7 +6,6 @@ Assigned to: Integrante 3 (Dev C)
 """
 
 import pytest
-
 from evoting.authority import AuthorityDTO, ElectionAuthority
 from evoting.config.params import MODP_2048_G, MODP_2048_P
 from evoting.crypto.dkg import (
@@ -41,7 +40,9 @@ class TestAuthorityInfrastructure:
 
     def test_authority_initialization_and_repr(self):
         """Test ElectionAuthority instance creation."""
-        auth = ElectionAuthority(1, MODP_2048_P, MODP_2048_G, name="Auth_Alpha", generate_keys=False)
+        auth = ElectionAuthority(
+            1, MODP_2048_P, MODP_2048_G, name="Auth_Alpha", generate_keys=False
+        )
         assert auth.authority_id == 1
         assert auth.name == "Auth_Alpha"
         assert auth.private_key_x is None

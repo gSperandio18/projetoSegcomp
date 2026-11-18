@@ -5,10 +5,8 @@ for RSA-2048 key generation, canonicalization, PSS signatures, and unicity check
 Assigned to: Integrante 1 (Dev A)
 """
 
-import json
 import pytest
 from cryptography.hazmat.primitives.asymmetric import rsa
-
 from evoting.crypto.rsa import (
     canonicalize_payload,
     check_voter_eligibility_and_unicity,

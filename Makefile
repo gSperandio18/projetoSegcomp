@@ -33,8 +33,8 @@ lint:
 	$(PYLINT) src/evoting
 
 format:
-	$(RUFF) check --fix src tests bin
 	$(RUFF) format src tests bin
+	$(RUFF) check --fix src tests bin
 
 test:
 	$(PYTEST)

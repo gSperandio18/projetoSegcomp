@@ -5,9 +5,9 @@ and candidate choices validation for Exponential ElGamal voting.
 Assigned to: Integrante 2 (Dev B)
 """
 
-from dataclasses import dataclass, field
 import json
-from typing import Any, Dict, List, Optional
+from dataclasses import dataclass, field
+from typing import Any
 
 from evoting.crypto.elgamal import EncryptedVote, encrypt_vote
 
@@ -20,7 +20,7 @@ class CandidateCiphertext:
     c1: int
     c2: int
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert candidate ciphertext to dictionary representation."""
         return {
             "candidate": self.candidate,
@@ -29,7 +29,7 @@ class CandidateCiphertext:
         }
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "CandidateCiphertext":
+    def from_dict(cls, data: dict[str, Any]) -> "CandidateCiphertext":
         """Reconstruct candidate ciphertext from dictionary."""
         return cls(
             candidate=str(data["candidate"]),
@@ -50,18 +50,17 @@ class BallotContainer:
         Optional election metadata (e.g. contest ID, timestamp).
     """
 
-    votes: Dict[str, EncryptedVote] = field(default_factory=dict)
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    votes: dict[str, EncryptedVote] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
     def add_candidate_vote(self, candidate: str, cipher: EncryptedVote) -> None:
         """Add an encrypted vote for a candidate."""
         self.votes[candidate] = cipher
 
-    def to_dict(self) -> Dict[str, Dict[str, int]]:
+    def to_dict(self) -> dict[str, dict[str, int]]:
         """Serialize ballot votes to dictionary format suitable for signing and ledger storage."""
         return {
-            cand: {"c1": cipher.c1, "c2": cipher.c2}
-            for cand, cipher in sorted(self.votes.items())
+            cand: {"c1": cipher.c1, "c2": cipher.c2} for cand, cipher in sorted(self.votes.items())
         }
 
     def to_json(self) -> str:
@@ -69,7 +68,7 @@ class BallotContainer:
         return json.dumps(self.to_dict(), sort_keys=True)
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Dict[str, int]]) -> "BallotContainer":
+    def from_dict(cls, data: dict[str, dict[str, int]]) -> "BallotContainer":
         """Deserialize ballot container from dictionary."""
         container = cls()
         for cand, c_dict in data.items():
@@ -80,7 +79,7 @@ class BallotContainer:
     @classmethod
     def create_encrypted_ballot(
         cls,
-        candidate_choices: Dict[str, int],
+        candidate_choices: dict[str, int],
         joint_public_key_h: int,
         p: int,
         g: int,

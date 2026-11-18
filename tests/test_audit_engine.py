@@ -5,12 +5,9 @@ TDD test specifications for independent zero-trust verification checks.
 Assigned to: Integrante 5 (Dev E)
 """
 
-import json
 import pytest
-
-from evoting.auditor import AuditCheckItem, AuditReport, ElectionAuditor
+from evoting.auditor import AuditReport, ElectionAuditor
 from evoting.config.params import (
-    DEFAULT_DATABASE_PATH,
     MIN_AUTHORITIES,
     MODP_2048_G,
     MODP_2048_P,

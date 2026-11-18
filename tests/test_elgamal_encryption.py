@@ -6,8 +6,8 @@ Assigned to: Integrante 2 (Dev B)
 """
 
 import json
-import pytest
 
+import pytest
 from evoting.ballot import BallotContainer, CandidateCiphertext
 from evoting.config.params import MODP_2048_G, MODP_2048_P
 from evoting.crypto.elgamal import (

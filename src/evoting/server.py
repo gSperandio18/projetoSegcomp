@@ -6,7 +6,7 @@ and homomorphic tally aggregation.
 """
 
 from datetime import datetime, timezone
-from typing import Any, Dict, List, Optional, Set
+
 from cryptography.hazmat.primitives.asymmetric import rsa
 
 from evoting.bulletin_board import AppendOnlyBulletinBoard, BulletinBlock
@@ -44,19 +44,19 @@ class ElectionServer:
     def __init__(
         self,
         election_id: str,
-        candidates: List[str],
-        db_path: Optional[str] = DEFAULT_DATABASE_PATH,
+        candidates: list[str],
+        db_path: str | None = DEFAULT_DATABASE_PATH,
         p: int = MODP_2048_P,
         g: int = MODP_2048_G,
     ) -> None:
         self.election_id: str = election_id
-        self.candidates: List[str] = candidates
-        self.db_path: Optional[str] = db_path
+        self.candidates: list[str] = candidates
+        self.db_path: str | None = db_path
         self.p: int = p
         self.g: int = g
 
         # Joint public key synthesized from authorities
-        self.joint_public_key_h: Optional[int] = None
+        self.joint_public_key_h: int | None = None
 
         # Server's own RSA keypair for signing voter receipts
         self._server_private_key: rsa.RSAPrivateKey = rsa.generate_private_key(
@@ -69,8 +69,8 @@ class ElectionServer:
         self.bulletin_board: AppendOnlyBulletinBoard = AppendOnlyBulletinBoard(db_path=db_path)
 
         # In-memory registries
-        self.registered_voters: Dict[str, rsa.RSAPublicKey] = {}
-        self.cast_voter_ids: Set[str] = set()
+        self.registered_voters: dict[str, rsa.RSAPublicKey] = {}
+        self.cast_voter_ids: set[str] = set()
 
     def set_joint_public_key(self, joint_public_key_h: int) -> None:
         """Register the synthesized joint public key from authorities."""
@@ -83,7 +83,7 @@ class ElectionServer:
     def cast_ballot(
         self,
         voter_id: str,
-        encrypted_ballot: Dict[str, Dict[str, int]],
+        encrypted_ballot: dict[str, dict[str, int]],
         signature: bytes,
     ) -> VoterReceipt:
         """Process, verify, and commit an incoming ballot to the bulletin board.
@@ -119,9 +119,11 @@ class ElectionServer:
         except NotImplementedError:
             # Fallback for stub state: check basic set membership
             if voter_id not in self.registered_voters:
-                raise ValueError(f"Ballot rejected: Voter {voter_id} not registered.")
+                raise ValueError(f"Ballot rejected: Voter {voter_id} not registered.") from None
             if voter_id in self.cast_voter_ids:
-                raise ValueError(f"Ballot rejected: Double voting detected for {voter_id}.")
+                raise ValueError(
+                    f"Ballot rejected: Double voting detected for {voter_id}."
+                ) from None
 
         # Step 2: Signature Verification
         voter_pubkey = self.registered_voters[voter_id]
@@ -156,7 +158,7 @@ class ElectionServer:
 
         return receipt
 
-    def get_public_ledger(self) -> List[BulletinBlock]:
+    def get_public_ledger(self) -> list[BulletinBlock]:
         """Return full chain of public bulletin board blocks."""
         return self.bulletin_board.chain
 

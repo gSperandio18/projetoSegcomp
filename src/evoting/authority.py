@@ -6,7 +6,7 @@ Assigned to: Integrante 3 (Dev C)
 """
 
 from dataclasses import dataclass
-from typing import Any, Dict, Optional
+from typing import Any
 
 from evoting.config.params import MODP_2048_G, MODP_2048_P
 from evoting.crypto.dkg import (
@@ -25,7 +25,7 @@ class AuthorityDTO:
     name: str
     public_key_h: str
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert DTO to dictionary representation."""
         return {
             "authority_id": self.authority_id,
@@ -56,14 +56,14 @@ class ElectionAuthority:
         authority_id: int,
         p: int = MODP_2048_P,
         g: int = MODP_2048_G,
-        name: Optional[str] = None,
+        name: str | None = None,
         generate_keys: bool = True,
     ) -> None:
         self.authority_id: int = authority_id
         self.p: int = p
         self.g: int = g
         self.name: str = name or f"Election_Trustee_{authority_id}"
-        self._private_key_x: Optional[int] = None
+        self._private_key_x: int | None = None
         self.public_key_h: int = 0
 
         if generate_keys:
@@ -79,7 +79,7 @@ class ElectionAuthority:
             self.public_key_h = 0
 
     @property
-    def private_key_x(self) -> Optional[int]:
+    def private_key_x(self) -> int | None:
         """Access the authority's secret share x_i."""
         return self._private_key_x
 
@@ -103,7 +103,7 @@ class ElectionAuthority:
             )
         return compute_partial_decryption_share(tally_cipher, self._private_key_x, self.p)
 
-    def persist_authority(self, db_path: Optional[str] = None) -> AuthorityDTO:
+    def persist_authority(self, db_path: str | None = None) -> AuthorityDTO:
         """Persist authority public registration in the election database."""
         dto = AuthorityDTO(
             authority_id=self.authority_id,

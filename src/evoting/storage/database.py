@@ -4,10 +4,11 @@ Implements SQLAlchemy 2.0 ORM models, session management, and persistence helper
 for voters, authorities, immutable bulletin board blocks, receipts, and tallies.
 """
 
+import json
+from collections.abc import Generator
 from contextlib import contextmanager
 from datetime import datetime, timezone
-import json
-from typing import Any, Dict, Generator, List, Optional
+from typing import Any
 
 from sqlalchemy import (
     Boolean,
@@ -158,7 +159,7 @@ def save_voter(session: Session, voter_id: str, public_key_pem: str) -> VoterMod
     return voter
 
 
-def get_voter(session: Session, voter_id: str) -> Optional[VoterModel]:
+def get_voter(session: Session, voter_id: str) -> VoterModel | None:
     """Retrieve voter model by voter_id."""
     return session.query(VoterModel).filter_by(voter_id=voter_id).first()
 
@@ -181,7 +182,7 @@ def save_authority(
     return auth
 
 
-def get_authorities(session: Session) -> List[AuthorityModel]:
+def get_authorities(session: Session) -> list[AuthorityModel]:
     """Retrieve all registered authorities."""
     return session.query(AuthorityModel).order_by(AuthorityModel.authority_id).all()
 
@@ -192,7 +193,7 @@ def save_bulletin_block(
     previous_hash: str,
     block_hash: str,
     voter_id: str,
-    ballot_payload: Dict[str, Any],
+    ballot_payload: dict[str, Any],
     voter_signature_hex: str,
     timestamp: str,
 ) -> BulletinBlockModel:
@@ -210,7 +211,7 @@ def save_bulletin_block(
     return block
 
 
-def get_all_blocks(session: Session) -> List[BulletinBlockModel]:
+def get_all_blocks(session: Session) -> list[BulletinBlockModel]:
     """Retrieve all bulletin board blocks ordered by index."""
     return session.query(BulletinBlockModel).order_by(BulletinBlockModel.index).all()
 

@@ -5,17 +5,14 @@ Decryption Share Computation, and Homomorphic Tally Discrete Log Recovery.
 Assigned to: Integrante 3 (Dev C)
 """
 
-import secrets
-from typing import Dict, List, Tuple
-
-from evoting.config.params import MAX_DISCRETE_LOG_BOUND, MIN_AUTHORITIES, MODP_2048_G, MODP_2048_P
+from evoting.config.params import MAX_DISCRETE_LOG_BOUND, MODP_2048_G, MODP_2048_P
 from evoting.crypto.elgamal import EncryptedVote
 
 
 def generate_authority_keypair(
     p: int = MODP_2048_P,
     g: int = MODP_2048_G,
-) -> Tuple[int, int]:
+) -> tuple[int, int]:
     """Generate a private key share x_i and public key share h_i for an election authority.
 
     Parameters
@@ -54,7 +51,7 @@ def generate_authority_keypair(
 
 
 def compute_joint_public_key(
-    public_shares: List[int],
+    public_shares: list[int],
     p: int = MODP_2048_P,
 ) -> int:
     """Synthesize the joint election public key h from individual authority public shares.
@@ -97,7 +94,7 @@ def compute_joint_public_key(
     """
     # TODO: Implement joint public key synthesis
     raise NotImplementedError(
-        "TODO (Module 3 - Dev C): Implement compute_joint_public_key ensuring at least 3 authorities."
+        "TODO (Module 3 - Dev C): Implement compute_joint_public_key with >= 3 authorities."
     )
 
 
@@ -144,7 +141,7 @@ def compute_partial_decryption_share(
 
 def combine_decryption_shares_and_recover(
     tally_cipher: EncryptedVote,
-    shares: List[int],
+    shares: list[int],
     p: int = MODP_2048_P,
     g: int = MODP_2048_G,
     max_expected_votes: int = MAX_DISCRETE_LOG_BOUND,
