@@ -1,4 +1,3 @@
-
 """Module 1 Test Suite: Voter Identity & RSA Signatures.
 
 Covers Voter models, persistence, RSA key generation, canonicalization,
@@ -113,26 +112,25 @@ class TestRSACrypto:
 
         signature = sign_ballot_payload(private_key, payload)
 
-        assert verify_ballot_signature(
-            public_key, signature, payload
-        ) is True
+        assert verify_ballot_signature(public_key, signature, payload) is True
 
-        assert verify_ballot_signature(
-            public_key, signature, {"vote": 2}
-        ) is False
+        assert verify_ballot_signature(public_key, signature, {"vote": 2}) is False
 
     def test_check_voter_eligibility_and_unicity(self):
         registered_voters = {"v1", "v2", "v3"}
         cast_voters = {"v2"}
 
-        assert check_voter_eligibility_and_unicity(
-            "v1", registered_voters, cast_voters
-        ) == (True, "OK")
+        assert check_voter_eligibility_and_unicity("v1", registered_voters, cast_voters) == (
+            True,
+            "OK",
+        )
 
-        assert check_voter_eligibility_and_unicity(
-            "v4", registered_voters, cast_voters
-        ) == (False, "Voter not registered")
+        assert check_voter_eligibility_and_unicity("v4", registered_voters, cast_voters) == (
+            False,
+            "Voter not registered",
+        )
 
-        assert check_voter_eligibility_and_unicity(
-            "v2", registered_voters, cast_voters
-        ) == (False, "Double voting detected")
+        assert check_voter_eligibility_and_unicity("v2", registered_voters, cast_voters) == (
+            False,
+            "Double voting detected",
+        )
