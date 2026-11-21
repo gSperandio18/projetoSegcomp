@@ -19,7 +19,9 @@ O quadro público registra todas as cédulas cifradas em uma cadeia linear e pú
 
 Calcula o digest **SHA-256** (hexadecimal de 64 caracteres) para um bloco $k$:
 
-$$H_k = \text{SHA-256}(H_{k-1} \parallel k \parallel \text{voter\_id} \parallel \text{canonical}(\text{cédula}) \parallel \text{sig} \parallel \text{timestamp})$$
+```math
+H_k = \text{SHA-256}(H_{k-1} \parallel k \parallel \text{voter\_id} \parallel \text{canonical}(\text{cédula}) \parallel \text{sig} \parallel \text{timestamp})
+```
 
 **Funcionamento:**
 1. **Canonicalização da cédula:** tenta chamar `canonicalize_payload(ballot_data)` (Módulo 1 — Dev A). Enquanto o stub do Módulo 1 lançar `NotImplementedError`, aplica automaticamente o fallback idêntico (`json.dumps(ballot_data, sort_keys=True, separators=(",", ":")).encode("utf-8")`), garantindo que dicionários com chaves em ordens diferentes produzam sempre o mesmo hash.
