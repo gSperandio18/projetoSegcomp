@@ -1,9 +1,8 @@
 # Módulo 4: Quadro Público Imutável & Recibos Verificáveis
 
-Documentação técnica das implementações de responsabilidade do **Integrante 4 (Dev D)**: o livro-razão encadeado (*Append-Only Bulletin Board*) e o sistema de emissão e verificação de recibos digitais resistentes à coerção.
+Documentação da implementação referente ao módulo 4 do projeto: *Append-Only Bulletin Board* e o sistema de emissão e verificação de recibos digitais resistentes à coerção.
 
-## Arquivos do Módulo
-
+## Arquivos do Módulo 4
 | Arquivo | Responsabilidade |
 |---|---|
 | `src/evoting/bulletin_board.py` | Cálculo de hash SHA-256 dos blocos e verificação de integridade da cadeia |
@@ -22,7 +21,7 @@ Calcula o digest **SHA-256** (hexadecimal de 64 caracteres) para um bloco $k$:
 
 $$H_k = \text{SHA-256}(H_{k-1} \parallel k \parallel \text{voter\_id} \parallel \text{canonical}(\text{cédula}) \parallel \text{sig} \parallel \text{timestamp})$$
 
-**Como funciona internamente:**
+**Funcionamento:**
 1. **Canonicalização da cédula:** tenta chamar `canonicalize_payload(ballot_data)` (Módulo 1 — Dev A). Enquanto o stub do Módulo 1 lançar `NotImplementedError`, aplica automaticamente o fallback idêntico (`json.dumps(ballot_data, sort_keys=True, separators=(",", ":")).encode("utf-8")`), garantindo que dicionários com chaves em ordens diferentes produzam sempre o mesmo hash.
 2. **Prevenção de ambiguidade de delimitadores:** em vez de concatenar strings diretamente (o que poderia causar colisões estruturais como `"v1" + "23"` vs `"v12" + "3"`), os 6 campos ordenados são serializados em um array JSON compacto (`json.dumps([...], separators=(",", ":"))`).
 3. **Hashing:** aplica `hashlib.sha256` sobre os bytes UTF-8 resultantes e retorna a string hexadecimal de 64 caracteres.
@@ -111,96 +110,12 @@ assert recomputed_hash == block["block_hash"]
 
 ---
 
-## 4. Comandos para Ambiente, Integração e Validação
+## 4. Testes e Validaçãp
 
-### 4.1. Preparação do Ambiente Virtual
+O script `tests/test_bulletin_board.py` reúne **16 testes** estrturados em 3 classes:
 
-**Windows (PowerShell):**
-```powershell
-python -m venv .venv
-.\.venv\Scripts\Activate.ps1
-pip install -r requirements.txt
-pip install -e ".[dev]"
-```
-
-**Linux / macOS (Bash):**
-```bash
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-pip install -e ".[dev]"
-```
-
-### 4.2. Como Integrar esta Branch (`RuteDevD`) no Git
-
-Para atualizar sua branch local com o código do Módulo 4 e testar a integração com a sua parte:
-
-```bash
-# Baixar as referências atualizadas do repositório remoto
-git fetch origin
-
-# Opção A: testar a branch do Módulo 4 diretamente
-git checkout RuteDevD
-git pull origin RuteDevD
-
-# Opção B: trazer o Módulo 4 para dentro da sua branch de desenvolvimento
-git checkout <sua-branch>
-git merge origin/RuteDevD
-```
-
-### 4.3. Testes Unitários e Cobertura
-
-```bash
-# Rodar apenas os testes do Módulo 4 com relatório de linhas descobertas
-pytest tests/test_bulletin_board.py --cov=src/evoting/bulletin_board --cov=src/evoting/receipt --cov-report=term-missing --cov-fail-under=80
-
-# Rodar toda a suíte de integração do projeto (exige cobertura global >= 80%)
-pytest
-```
-
-### 4.4. Formatação e Análise Estática (Linters)
-
-```bash
-# Formatar automaticamente (Ruff)
-ruff format src/evoting/bulletin_board.py src/evoting/receipt.py tests/test_bulletin_board.py
-
-# Checar regras de estilo no Módulo 4 ou no projeto inteiro
-ruff check src/evoting/bulletin_board.py src/evoting/receipt.py tests/test_bulletin_board.py
-ruff check .
-
-# Análise estática (Pylint)
-pylint src/evoting/bulletin_board.py src/evoting/receipt.py
-pylint src/evoting
-```
-
-### 4.5. Execução Integrada (CLI, Auditoria e Documentação)
-
-```bash
-# Rodar a demonstração das 8 etapas da eleição (valida Etapas 3 e 5 do Módulo 4)
-python bin/election_cli.py
-
-# Rodar a auditoria independente (Confiança Zero)
-python bin/audit_cli.py
-python bin/audit_cli.py --db-path /caminho/para/eleicao.db
-python bin/audit_cli.py --board-json /caminho/para/board_dump.json --export-report relatorio.json
-
-# Inicializar banco SQLite local manualmente
-python -c "from evoting.storage.database import init_db; init_db()"
-
-# Gerar build local da documentação técnica (MkDocs)
-mkdocs build
-```
-
-*(Observação: em ambientes Linux/macOS com `make` instalado, os comandos equivalentes estão disponíveis no `Makefile`: `make test`, `make lint`, `make format`, `make run-demo`, `make run-audit` e `make docs-build`.)*
-
----
-
-## 5. Resumo dos Testes e Métricas Validadas
-
-A suíte `tests/test_bulletin_board.py` reúne **16 testes** distribuídos em 3 classes:
-
-* **`TestBulletinBoardInfrastructure`:** serialização de blocos, persistência em SQLite e estrutura do recibo.
-* **`TestBulletinBoardHashChain`:** formato SHA-256, determinismo de canonicalização, efeito avalanche em todos os 6 campos, detecção de adulteração de cédula/assinatura/timestamp, quebra de elo/Gênesis, exclusão/reordenação de blocos e ciclo `export_chain_json` / `load_from_list`.
+* **`TestBulletinBoardInfrastructure`:** serialização de blocos, persistência em SQLite e estrutura do recibo
+* **`TestBulletinBoardHashChain`:** formato SHA-256, determinismo de canonicalização, detecção de adulteração de cédula/assinatura/timestamp, quebra de elo/Gênesis, exclusão/reordenação de blocos e ciclo `export_chain_json` / `load_from_list`.
 * **`TestVoterReceipts`:** emissão e verificação válida, omissão de `r` e `m`, serialização `from_dict`, adulteração de campos, chave pública incorreta e assinatura corrompida ou não-hexadecimal.
 
 | Verificação | Resultado Validado |
