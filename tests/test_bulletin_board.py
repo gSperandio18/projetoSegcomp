@@ -1,9 +1,11 @@
 """Module 4 Test Suite: Append-Only Bulletin Board & Voter Receipts.
 
-Covers non-cryptographic ledger storage, block models, receipt DTOs, and provides
-TDD test specifications for hash-chain continuity and coercion-resistant receipts.
+Covers non-cryptographic ledger storage, block models, receipt DTOs,
+hash-chain integrity verification, and coercion-resistant receipts.
 Assigned to: Integrante 4 (Dev D)
 """
+
+import json
 
 import pytest
 from cryptography.hazmat.primitives.asymmetric import rsa
@@ -94,19 +96,151 @@ class TestBulletinBoardInfrastructure:
         assert "rcpt_001" in json_str
 
 
-class TestBulletinBoardCryptoStubs:
-    """Educational verification: stubs raise NotImplementedError with helpful guidance."""
+class TestBulletinBoardHashChain:
+    """Tests for SHA-256 block hashing and tamper detection on the bulletin board."""
 
-    def test_compute_block_hash_stub(self):
-        with pytest.raises(NotImplementedError) as exc_info:
-            compute_block_hash("prev", 1, "v1", {"a": 1}, "sig", "time")
-        assert "TODO (Module 4 - Dev D)" in str(exc_info.value)
+    def test_compute_block_hash_format_and_determinism(self):
+        """SHA-256 hash must be 64 hex chars and invariant to dictionary key order."""
+        ballot_a = {"Alice": {"c1": 10, "c2": 20}, "Bob": {"c1": 30, "c2": 40}}
+        ballot_b = {"Bob": {"c2": 40, "c1": 30}, "Alice": {"c2": 20, "c1": 10}}
 
-    def test_verify_chain_integrity_stub(self):
+        hash_a = compute_block_hash(
+            "0" * 64, 1, "voter_1", ballot_a, "abcd", "2026-11-23T12:00:00Z"
+        )
+        hash_b = compute_block_hash(
+            "0" * 64, 1, "voter_1", ballot_b, "abcd", "2026-11-23T12:00:00Z"
+        )
+
+        assert len(hash_a) == 64
+        int(hash_a, 16)  # Valid hexadecimal string
+        assert hash_a == hash_b
+
+    def test_compute_block_hash_avalanche_on_all_fields(self):
+        """Changing any single field in a block must produce a different SHA-256 digest."""
+        base_ballot = {"Alice": {"c1": 10, "c2": 20}}
+        base_hash = compute_block_hash(
+            "0" * 64, 1, "voter_1", base_ballot, "abcd", "2026-11-23T12:00:00Z"
+        )
+
+        assert (
+            compute_block_hash("1" * 64, 1, "voter_1", base_ballot, "abcd", "2026-11-23T12:00:00Z")
+            != base_hash
+        )
+        assert (
+            compute_block_hash("0" * 64, 2, "voter_1", base_ballot, "abcd", "2026-11-23T12:00:00Z")
+            != base_hash
+        )
+        assert (
+            compute_block_hash("0" * 64, 1, "voter_2", base_ballot, "abcd", "2026-11-23T12:00:00Z")
+            != base_hash
+        )
+        assert (
+            compute_block_hash(
+                "0" * 64,
+                1,
+                "voter_1",
+                {"Alice": {"c1": 11, "c2": 20}},
+                "abcd",
+                "2026-11-23T12:00:00Z",
+            )
+            != base_hash
+        )
+        assert (
+            compute_block_hash("0" * 64, 1, "voter_1", base_ballot, "abce", "2026-11-23T12:00:00Z")
+            != base_hash
+        )
+        assert (
+            compute_block_hash("0" * 64, 1, "voter_1", base_ballot, "abcd", "2026-11-23T12:00:01Z")
+            != base_hash
+        )
+
+    def test_verify_chain_integrity_valid_chain(self):
+        """Genesis-only and multi-ballot chains must pass integrity verification."""
         board = AppendOnlyBulletinBoard()
-        with pytest.raises(NotImplementedError) as exc_info:
-            board.verify_chain_integrity()
-        assert "TODO (Module 4 - Dev D)" in str(exc_info.value)
+        assert board.verify_chain_integrity() is True
+
+        b1 = board.append_ballot("v1", {"Alice": {"c1": 1, "c2": 2}}, b"sig1")
+        b2 = board.append_ballot("v2", {"Alice": {"c1": 3, "c2": 4}}, b"sig2")
+
+        assert b1.previous_hash == board.chain[0].block_hash
+        assert b2.previous_hash == b1.block_hash
+        assert board.verify_chain_integrity() is True
+
+    def test_tamper_detection_in_chain_ballot_data(self):
+        """Altering an encrypted ballot value in a committed block must be detected."""
+        board = AppendOnlyBulletinBoard()
+        board.append_ballot("v1", {"Alice": {"c1": 1, "c2": 2}}, b"sig1")
+        board.append_ballot("v2", {"Alice": {"c1": 3, "c2": 4}}, b"sig2")
+        assert board.verify_chain_integrity() is True
+
+        # Tamper with Block 1 ballot data
+        board.chain[1].ballot_data["Alice"]["c1"] = 999999
+        assert board.verify_chain_integrity() is False
+
+    def test_tamper_detection_metadata_and_signature(self):
+        """Altering voter signature or timestamp must invalidate chain integrity."""
+        board = AppendOnlyBulletinBoard()
+        board.append_ballot("v1", {"Alice": {"c1": 1, "c2": 2}}, b"sig1")
+
+        original_sig = board.chain[1].voter_signature_hex
+        board.chain[1].voter_signature_hex = "deadbeef"
+        assert board.verify_chain_integrity() is False
+        board.chain[1].voter_signature_hex = original_sig
+
+        board.chain[1].timestamp = "2099-01-01T00:00:00Z"
+        assert board.verify_chain_integrity() is False
+
+    def test_tamper_detection_broken_linkage_and_genesis(self):
+        """Altering Genesis previous_hash or inter-block hash linkage must fail verification."""
+        board = AppendOnlyBulletinBoard()
+        board.append_ballot("v1", {"Alice": {"c1": 1, "c2": 2}}, b"sig1")
+        board.append_ballot("v2", {"Alice": {"c1": 3, "c2": 4}}, b"sig2")
+
+        # Break link between Block 1 and Block 2
+        original_prev = board.chain[2].previous_hash
+        board.chain[2].previous_hash = "f" * 64
+        assert board.verify_chain_integrity() is False
+        board.chain[2].previous_hash = original_prev
+
+        # Break Genesis previous_hash invariant
+        board.chain[0].previous_hash = "1" * 64
+        assert board.verify_chain_integrity() is False
+
+    def test_tamper_detection_empty_removed_or_reordered(self):
+        """Empty chain, deleted block, or reordered blocks must all fail verification."""
+        board = AppendOnlyBulletinBoard()
+        board.append_ballot("v1", {"Alice": {"c1": 1, "c2": 2}}, b"sig1")
+        board.append_ballot("v2", {"Alice": {"c1": 3, "c2": 4}}, b"sig2")
+
+        # Reorder blocks 1 and 2
+        board.chain[1], board.chain[2] = board.chain[2], board.chain[1]
+        assert board.verify_chain_integrity() is False
+        board.chain[1], board.chain[2] = board.chain[2], board.chain[1]
+
+        # Delete middle block
+        board.chain.pop(1)
+        assert board.verify_chain_integrity() is False
+
+        # Empty chain
+        board.chain = []
+        assert board.verify_chain_integrity() is False
+
+    def test_export_and_load_chain_preserves_integrity(self):
+        """Exporting ledger to JSON and loading it back must preserve chain validity."""
+        board = AppendOnlyBulletinBoard()
+        board.append_ballot("v1", {"Alice": {"c1": 1, "c2": 2}}, b"sig1")
+        board.append_ballot("v2", {"Alice": {"c1": 3, "c2": 4}}, "abcd")
+
+        exported_json = board.export_chain_json()
+        reloaded = AppendOnlyBulletinBoard()
+        reloaded.load_from_list(json.loads(exported_json))
+
+        assert len(reloaded.chain) == 3
+        assert reloaded.verify_chain_integrity() is True
+
+
+class TestBulletinBoardCryptoStubs:
+    """Educational verification: remaining stubs raise NotImplementedError."""
 
     def test_issue_voter_receipt_stub(self):
         block = BulletinBlock(1, "p", "h", "v", {}, "s", "t")
@@ -121,15 +255,3 @@ class TestBulletinBoardCryptoStubs:
         with pytest.raises(NotImplementedError) as exc_info:
             verify_receipt(receipt, mock_key.public_key())
         assert "TODO (Module 4 - Dev D)" in str(exc_info.value)
-
-
-# ==============================================================================
-# TDD Test Templates for Integrante 4 (Dev D) to activate after implementation:
-# ==============================================================================
-# def test_tamper_detection_in_chain():
-#     board = AppendOnlyBulletinBoard()
-#     board.append_ballot("v1", {"Alice": {"c1": 1, "c2": 2}}, b"sig1")
-#     assert board.verify_chain_integrity() is True
-#     # Tamper with Block 1
-#     board.chain[1].ballot_data["Alice"]["c1"] = 999999
-#     assert board.verify_chain_integrity() is False

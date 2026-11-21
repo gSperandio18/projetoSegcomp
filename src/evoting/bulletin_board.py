@@ -5,12 +5,14 @@ persistence hooks alongside educational SHA-256 hash-chaining stubs.
 Assigned to: Integrante 4 (Dev D)
 """
 
+import hashlib
 import json
 from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
 from typing import Any
 
 from evoting.config.params import GENESIS_PREVIOUS_HASH
+from evoting.crypto.rsa import canonicalize_payload
 from evoting.storage.database import get_db_session, save_bulletin_block
 
 
@@ -110,10 +112,30 @@ def compute_block_hash(
     3. Compute SHA-256 digest using `hashlib.sha256()`.
     4. Return `.hexdigest()`.
     """
-    # TODO: Implement SHA-256 block hash computation
-    raise NotImplementedError(
-        "TODO (Module 4 - Dev D): Implement compute_block_hash using hashlib.sha256."
-    )
+    try:
+        canonical_ballot_bytes = canonicalize_payload(ballot_data)
+    except NotImplementedError:
+        canonical_ballot_bytes = json.dumps(
+            ballot_data,
+            sort_keys=True,
+            separators=(",", ":"),
+        ).encode("utf-8")
+
+    canonical_ballot_str = canonical_ballot_bytes.decode("utf-8")
+
+    composite_payload = json.dumps(
+        [
+            previous_hash,
+            index,
+            voter_id,
+            canonical_ballot_str,
+            voter_signature_hex,
+            timestamp,
+        ],
+        separators=(",", ":"),
+    ).encode("utf-8")
+
+    return hashlib.sha256(composite_payload).hexdigest()
 
 
 class AppendOnlyBulletinBoard:
@@ -241,10 +263,33 @@ class AppendOnlyBulletinBoard:
         3. Recompute block hash using `compute_block_hash` and compare with stored block_hash.
         4. If any comparison fails, return False; return True if all valid.
         """
-        # TODO: Implement chain integrity verification
-        raise NotImplementedError(
-            "TODO (Module 4 - Dev D): Implement verify_chain_integrity for tamper detection."
-        )
+        if not self.chain:
+            return False
+
+        for expected_index, block in enumerate(self.chain):
+            if block.index != expected_index:
+                return False
+
+            if expected_index == 0:
+                if block.previous_hash != GENESIS_PREVIOUS_HASH:
+                    return False
+            else:
+                prev_block = self.chain[expected_index - 1]
+                if block.previous_hash != prev_block.block_hash:
+                    return False
+
+            recomputed_hash = compute_block_hash(
+                previous_hash=block.previous_hash,
+                index=block.index,
+                voter_id=block.voter_id,
+                ballot_data=block.ballot_data,
+                voter_signature_hex=block.voter_signature_hex,
+                timestamp=block.timestamp,
+            )
+            if block.block_hash != recomputed_hash:
+                return False
+
+        return True
 
     def export_chain_json(self) -> str:
         """Export full ledger chain to JSON string."""
