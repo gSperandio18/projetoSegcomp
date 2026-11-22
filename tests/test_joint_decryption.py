@@ -88,24 +88,29 @@ class TestDKGCryptoStubs:
         assert "TODO (Module 3 - Dev C)" in str(exc_info.value)
 
 
-# ==============================================================================
-# TDD Test Templates for Integrante 3 (Dev C) to activate after implementation:
-# ==============================================================================
-# def test_joint_public_key_homomorphic_property():
-#     p = 467
-#     g = 2
-#     x1, x2, x3 = 10, 20, 30
-#     h1 = pow(g, x1, p)
-#     h2 = pow(g, x2, p)
-#     h3 = pow(g, x3, p)
-#     h_joint = compute_joint_public_key([h1, h2, h3], p)
-#     expected_h = pow(g, x1 + x2 + x3, p)
-#     assert h_joint == expected_h
-#
-# def test_incomplete_authorities_fails_decryption():
-#     p = 467
-#     g = 2
-#     cipher = EncryptedVote(100, 200)
-#     # Providing only 2 shares when 3 were involved
-#     with pytest.raises(ValueError):
-#         combine_decryption_shares_and_recover(cipher, [123, 456], p, g, max_expected_votes=10)
+def test_joint_public_key_homomorphic_property():
+    p = 467
+    g = 2
+    x1, x2, x3 = 10, 20, 30
+    h1 = pow(g, x1, p)
+    h2 = pow(g, x2, p)
+    h3 = pow(g, x3, p)
+    h_joint = compute_joint_public_key([h1, h2, h3], p)
+    expected_h = pow(g, x1 + x2 + x3, p)
+    assert h_joint == expected_h
+
+
+def test_incomplete_authorities_fails_joint():
+    p = 467
+    # Providing only 2 shares when 3 were involved
+    with pytest.raises(ValueError):
+        compute_joint_public_key([123, 456], p)
+
+
+def test_incomplete_authorities_fails_decryption():
+    p = 467
+    g = 2
+    cipher = EncryptedVote(100, 200)
+    # Providing only 2 shares when 3 were involved
+    with pytest.raises(ValueError):
+        combine_decryption_shares_and_recover(cipher, [123, 456], p, g, max_expected_votes=10)
