@@ -88,39 +88,41 @@ class TestDKGCrypto:
 
         assert d == pow(cipher.c1, private_key, MODP_2048_P)
 
-    # def test_combine_decryption_shares(self):
-    #     import secrets
+    def test_combine_decryption_shares(self):
+        import secrets
 
-    #     # par de chaves de autoridades
-    #     keypairs = [
-    #         generate_authority_keypair(MODP_2048_P, MODP_2048_G),
-    #         generate_authority_keypair(MODP_2048_P, MODP_2048_G),
-    #         generate_authority_keypair(MODP_2048_P, MODP_2048_G),
-    #     ]
+        # par de chaves de autoridades
+        keypairs = [
+            generate_authority_keypair(MODP_2048_P, MODP_2048_G),
+            generate_authority_keypair(MODP_2048_P, MODP_2048_G),
+            generate_authority_keypair(MODP_2048_P, MODP_2048_G),
+        ]
 
-    #     # soma dos chaves privadas (expoentes)
-    #     key_sum = 0
-    #     for kp in keypairs:
-    #         key_sum += kp[0]
+        # soma dos chaves privadas (expoentes)
+        key_sum = 0
+        for kp in keypairs:
+            key_sum += kp[0]
 
-    #     # chave conjunta
-    #     h = compute_joint_public_key([keypairs[0][1], keypairs[1][1], keypairs[2][1]], MODP_2048_P)
+        # chave conjunta
+        h = compute_joint_public_key([keypairs[0][1], keypairs[1][1], keypairs[2][1]], MODP_2048_P)
 
-    #     blinding_factor_r = secrets.randbelow(MODP_2048_P - 3) + 2
-    #     c1 = pow(MODP_2048_G, blinding_factor_r, MODP_2048_P)
-    #     gm = pow(MODP_2048_G, 1, MODP_2048_P)
-    #     hr = pow(h, blinding_factor_r, MODP_2048_P)
-    #     c2 = (gm * hr) % MODP_2048_P
-    #     cipher = EncryptedVote(c1, c2)
+        vote_count = 12
 
-    #     vote_shares = []
-    #     for kp in keypairs:
-    #         vote_shares.append(compute_partial_decryption_share(cipher, kp[0], MODP_2048_P))
+        blinding_factor_r = secrets.randbelow(MODP_2048_P - 3) + 2
+        c1 = pow(MODP_2048_G, blinding_factor_r, MODP_2048_P)
+        gm = pow(MODP_2048_G, vote_count, MODP_2048_P)
+        hr = pow(h, blinding_factor_r, MODP_2048_P)
+        c2 = (gm * hr) % MODP_2048_P
+        cipher = EncryptedVote(c1, c2)
 
-    #     # TODO: arrumar teste da decifragem, m sempre dá 1 (implementação de cipher?)
-    #     m = combine_decryption_shares_and_recover(cipher, vote_shares, MODP_2048_P, MODP_2048_G)
+        vote_shares = []
+        for kp in keypairs:
+            vote_shares.append(compute_partial_decryption_share(cipher, kp[0], MODP_2048_P))
 
-    #     assert m == key_sum
+        # TODO: arrumar teste da decifragem, m sempre dá 1 (implementação de cipher?)
+        m = combine_decryption_shares_and_recover(cipher, vote_shares, MODP_2048_P, MODP_2048_G)
+
+        assert m == vote_count
 
 
 def test_joint_public_key_homomorphic_property():
