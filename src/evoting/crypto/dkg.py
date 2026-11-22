@@ -43,7 +43,6 @@ def generate_authority_keypair(
     """
 
     x_i = secrets.randbelow(p - 3) + 2
-    # TODO: garantir que x_i é seguro
     h_i = pow(g, x_i, p)
 
     return (x_i, h_i)
@@ -91,10 +90,10 @@ def compute_joint_public_key(
     if len(public_shares) < MIN_AUTHORITIES:
         raise ValueError("Número insuficiente de chaves de autoridade")
 
-    # cálculo da chave pública conjunta, g^(soma(x_i)) mod p
+    # cálculo da chave pública conjunta; prod(h_i) mod p =  g^(soma(x_i)) mod p
     h = 1
-    for key in public_shares:
-        h = (h * key) % p
+    for key_share in public_shares:
+        h = (h * key_share) % p
 
     return h
 
@@ -131,6 +130,7 @@ def compute_partial_decryption_share(
       and destroys ballot secrecy.
     """
 
+    # raiz primitiva elevada a (bliding factor R + chave privada de autoridade)
     d_i = pow(tally_cipher.c1, private_key_x, p)
     return d_i
 
@@ -191,17 +191,14 @@ def combine_decryption_shares_and_recover(
         raise ValueError("Número insuficiente de chaves de autoridade")
 
     # cálculo do produto homomórfico
-    d_product = 1
-    for d_share in shares:
-        d_product = (d_product * d_share) % p
-
+    d_product = compute_joint_public_key(shares, p)
     d_inv = pow(d_product, -1, p)
 
     target_gm = (tally_cipher.c2 * d_inv) % p
 
     # busca da potência de g usada na criptografia
     current_val = 1
-    for m in range(max_expected_votes, +1):
+    for m in range(max_expected_votes + 1):
         if current_val == target_gm:
             return m
 
