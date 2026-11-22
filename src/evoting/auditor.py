@@ -88,16 +88,16 @@ class ElectionAuditor:
                 name="Hash Chain Integrity",
                 passed=False,
                 details="Bulletin board is empty or does not exist",
-                )
+            )
 
-        try: 
+        try:
             for index_esperado, block in enumerate(self.blocks):
                 if block["index"] != index_esperado:
                     return AuditCheckItem(
                         name="Hash Chain Integrity",
                         passed=False,
                         details=(
-                            f"Block index {block['index']} does not match " \
+                            f"Block index {block['index']} does not match "
                             f"expected position {index_esperado}"
                         ),
                     )
@@ -107,9 +107,8 @@ class ElectionAuditor:
                         return AuditCheckItem(
                             name="Hash Chain Integrity",
                             passed=False,
-                            details=
-                                "Genesis block previous_hash does " \
-                                "not match GENESIS_PREVIOUS_HASH.",
+                            details="Genesis block previous_hash does "
+                            "not match GENESIS_PREVIOUS_HASH.",
                         )
 
                 else:
@@ -119,7 +118,7 @@ class ElectionAuditor:
                             name="Hash Chain Integrity",
                             passed=False,
                             details=(
-                                f"Bulletin board {block['index']} index doesn't match " \
+                                f"Bulletin board {block['index']} index doesn't match "
                                 f"list's {index_esperado} index"
                             ),
                         )
@@ -152,7 +151,8 @@ class ElectionAuditor:
         return AuditCheckItem(
             name="Hash Chain Integrity",
             passed=True,
-            details=f"Chain integrity verified across {len(self.blocks)} block(s)")
+            details=f"Chain integrity verified across {len(self.blocks)} block(s)",
+        )
 
     def audit_voter_signatures_and_unicity(self) -> AuditCheckItem:
         """Verify that every cast ballot has a valid RSA signature and no voter cast twice.
