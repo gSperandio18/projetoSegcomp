@@ -11,7 +11,8 @@ from typing import Any
 
 from cryptography.hazmat.primitives.asymmetric import rsa
 
-from evoting.config.params import MODP_2048_G, MODP_2048_P
+from evoting.bulletin_board import compute_block_hash
+from evoting.config.params import GENESIS_PREVIOUS_HASH, MODP_2048_G, MODP_2048_P
 from evoting.crypto.elgamal import EncryptedVote
 
 
@@ -77,15 +78,81 @@ class ElectionAuditor:
         - Block k must have previous_hash matching Block k-1 hash.
         - Block k hash must match recomputed SHA-256 over canonical contents.
 
-        TODO (Module 5 - Dev E):
-        1. Iterate through self.blocks from index 0.
-        2. Verify previous_hash linkage and recompute SHA-256 for each block.
-        3. Return AuditCheckItem(name="Hash Chain Integrity", passed=True/False, details=...).
+        What (Module 5 - Dev E) does:
+        1. Iterates through self.blocks from index 0.
+        2. Verifies previous_hash linkage and recompute SHA-256 for each block.
+        3. Returns AuditCheckItem(name="Hash Chain Integrity", passed=True/False, details=...).
         """
-        # TODO: Implement independent hash chain verification
-        raise NotImplementedError(
-            "TODO (Module 5 - Dev E): Implement audit_hash_chain_integrity in auditor.py."
-        )
+        if not self.blocks:
+            return AuditCheckItem(
+                name="Hash Chain Integrity",
+                passed=False,
+                details="Bulletin board is empty or does not exist",
+                )
+
+        try: 
+            for index_esperado, block in enumerate(self.blocks):
+                if block["index"] != index_esperado:
+                    return AuditCheckItem(
+                        name="Hash Chain Integrity",
+                        passed=False,
+                        details=(
+                            f"Block index {block['index']} does not match " \
+                            f"expected position {index_esperado}"
+                        ),
+                    )
+
+                if index_esperado == 0:
+                    if block["previous_hash"] != GENESIS_PREVIOUS_HASH:
+                        return AuditCheckItem(
+                            name="Hash Chain Integrity",
+                            passed=False,
+                            details=
+                                "Genesis block previous_hash does " \
+                                "not match GENESIS_PREVIOUS_HASH.",
+                        )
+
+                else:
+                    previous_block = self.blocks[index_esperado - 1]
+                    if block["previous_hash"] != previous_block["block_hash"]:
+                        return AuditCheckItem(
+                            name="Hash Chain Integrity",
+                            passed=False,
+                            details=(
+                                f"Bulletin board {block['index']} index doesn't match " \
+                                f"list's {index_esperado} index"
+                            ),
+                        )
+
+                recomputed_hash = compute_block_hash(
+                    previous_hash=block["previous_hash"],
+                    index=block["index"],
+                    voter_id=block["voter_id"],
+                    ballot_data=block["ballot_data"],
+                    voter_signature_hex=block["voter_signature_hex"],
+                    timestamp=block["timestamp"],
+                )
+
+                if block["block_hash"] != recomputed_hash:
+                    return AuditCheckItem(
+                        name="Hash Chain Integrity",
+                        passed=False,
+                        details=(
+                            f"Block {block['index']} hash does not match recomputed SHA-256 digest."
+                        ),
+                    )
+        except KeyError as e:
+            return AuditCheckItem(
+                name="Hash Chain Integrity",
+                passed=False,
+                details="Malformed block missing required field",
+                error=f"Missing key: {e}",
+            )
+
+        return AuditCheckItem(
+            name="Hash Chain Integrity",
+            passed=True,
+            details=f"Chain integrity verified across {len(self.blocks)} block(s)")
 
     def audit_voter_signatures_and_unicity(self) -> AuditCheckItem:
         """Verify that every cast ballot has a valid RSA signature and no voter cast twice.

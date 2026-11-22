@@ -66,3 +66,6 @@ audit_report.json
 *.swo
 *~
 .DS_Store
+
+#docs
+ARCHITECTURE_AND_CRYPTO_GUIDE.md
