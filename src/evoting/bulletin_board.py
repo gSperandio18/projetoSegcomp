@@ -1,7 +1,7 @@
 """Module 4: Append-Only Verifiable Public Bulletin Board.
 
-Full implementation of ledger data structures, genesis block setup, and database
-persistence hooks alongside educational SHA-256 hash-chaining stubs.
+Full implementation of ledger data structures, genesis block setup, database
+persistence hooks, and SHA-256 hash-chaining verification.
 Assigned to: Integrante 4 (Dev D)
 """
 
@@ -104,14 +104,7 @@ def compute_block_hash(
     Security Pitfalls:
     - Omission of voter_signature or timestamp in the hash allows signature substitution attacks.
     - Ambiguous delimiter concatenation: concatenating raw strings without canonical serialization
-      can allow extension attacks.
-
-    TODO (Module 4 - Dev D):
-    1. Canonicalize `ballot_data` to bytes using `canonicalize_payload(ballot_data)`.
-    2. Build composite byte string incorporating all fields deterministically.
-    3. Compute SHA-256 digest using `hashlib.sha256()`.
-    4. Return `.hexdigest()`.
-    """
+      can allow extension attacks."""
     try:
         canonical_ballot_bytes = canonicalize_payload(ballot_data)
     except NotImplementedError:
@@ -255,14 +248,7 @@ class AppendOnlyBulletinBoard:
         2. For every k >= 1:
            block[k].previous_hash == block[k - 1].block_hash.
         3. For every block k:
-           block[k].block_hash == compute_block_hash(...block[k] fields...).
-
-        TODO (Module 4 - Dev D):
-        1. Iterate through self.chain from 0 to len(self.chain) - 1.
-        2. Check previous_hash linkages.
-        3. Recompute block hash using `compute_block_hash` and compare with stored block_hash.
-        4. If any comparison fails, return False; return True if all valid.
-        """
+           block[k].block_hash == compute_block_hash(...block[k] fields...)."""
         if not self.chain:
             return False
 

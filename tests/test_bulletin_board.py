@@ -1,7 +1,7 @@
 """Module 4 Test Suite: Append-Only Bulletin Board & Voter Receipts.
 
-Covers non-cryptographic ledger storage, block models, receipt DTOs,
-hash-chain integrity verification, and coercion-resistant receipts.
+Covers ledger persistence, block and receipt models, SHA-256 hash-chain
+integrity verification, and RSA-PSS coercion-resistant voter receipts.
 Assigned to: Integrante 4 (Dev D)
 """
 

@@ -1,7 +1,7 @@
 """Module 4: Coercion-Resistant Voter Receipts.
 
-Full implementation of receipt containers and verification models alongside
-educational cryptographic stubs for server-signed receipts.
+Full implementation of receipt containers, verification models, and
+RSA-PSS server-signed receipt issuance and verification.
 Assigned to: Integrante 4 (Dev D)
 """
 
@@ -88,14 +88,7 @@ def issue_voter_receipt(
     Security Pitfalls:
     - Never include ElGamal randomizer r or plaintext choices! If included, vote buyers
       can compel the voter to surrender the receipt to verify how they voted.
-    - Deterministic message formatting prevents receipt forgery.
-
-    TODO (Module 4 - Dev D):
-    1. Construct canonical message bytes:
-       `f"{block.index}:{block.block_hash}:{block.voter_id}".encode("utf-8")`.
-    2. Sign message bytes using `server_private_key.sign(msg, padding.PSS(...), hashes.SHA256())`.
-    3. Construct and return `VoterReceipt`.
-    """
+    - Deterministic message formatting prevents receipt forgery."""
     message = _build_receipt_message(block.index, block.block_hash, block.voter_id)
 
     signature_bytes = server_private_key.sign(
@@ -133,15 +126,7 @@ def verify_receipt(
     Returns
     -------
     bool
-        True if the signature is valid; False otherwise.
-
-    TODO (Module 4 - Dev D):
-    1. Reconstruct canonical message bytes:
-       `f"{receipt.block_index}:{receipt.block_hash}:{receipt.voter_id}".encode("utf-8")`.
-    2. Decode signature from hex bytes: `bytes.fromhex(receipt.server_signature_hex)`.
-    3. In a try-except block, call `server_public_key.verify(...)`.
-    4. Return True on success; return False if `InvalidSignature` caught.
-    """
+        True if the signature is valid; False otherwise."""
     message = _build_receipt_message(
         receipt.block_index,
         receipt.block_hash,
