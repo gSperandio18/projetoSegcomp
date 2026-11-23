@@ -1,8 +1,7 @@
 """Module 3: Election Authority Entity & Orchestration.
 
 Full implementation of authority metadata, key ceremony state, and partial
-decryption share packaging alongside educational DKG stubs.
-Assigned to: Integrante 3 (Dev C)
+decryption share packaging.
 """
 
 from dataclasses import dataclass

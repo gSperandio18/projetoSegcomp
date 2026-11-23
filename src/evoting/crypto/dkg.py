@@ -1,8 +1,7 @@
 """Module 3: Distributed Key Generation (DKG) & Threshold Decryption.
 
-Educational stubs and specifications for Multi-Authority Joint Public Key Synthesis,
-Decryption Share Computation, and Homomorphic Tally Discrete Log Recovery.
-Assigned to: Integrante 3 (Dev C)
+Specifications for Multi-Authority Joint Public Key Synthesis, Decryption
+Share Computation, and Homomorphic Tally Discrete Log Recovery.
 """
 
 import secrets

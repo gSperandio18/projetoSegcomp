@@ -2,7 +2,6 @@
 
 Covers non-cryptographic ElectionAuthority metadata/persistence and provides
 TDD test specifications for joint public keys, partial shares, and discrete log recovery.
-Assigned to: Integrante 3 (Dev C)
 """
 
 import pytest
