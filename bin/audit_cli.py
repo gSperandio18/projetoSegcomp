@@ -15,7 +15,7 @@ import os
 import sys
 from typing import Any
 
-from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import padding, rsa
 
 from evoting.auditor import AuditReport, ElectionAuditor
@@ -166,6 +166,60 @@ def _build_demo_election() -> tuple[
     return blocks, voter_registry, candidates, candidate_shares, {"Alice": 2, "Bob": 1}
 
 
+def run_interactive_audit(
+    json_path: str = "artifacts/interactive_election_data.json",
+    verbose: bool = False,
+) -> int:
+    """Execute zero-trust audit against the latest interactive election dataset."""
+    if not os.path.exists(json_path) and os.path.exists("interactive_election_data.json"):
+        json_path = "interactive_election_data.json"
+
+    print(f"[*] Running zero-trust audit against interactive election package '{json_path}'...")
+    if not os.path.exists(json_path):
+        print(
+            f"[!] Interactive election package '{json_path}' not found.\n"
+            "    Please run 'make run-interactive' and conclude voting first."
+        )
+        return 1
+
+    with open(json_path, encoding="utf-8") as f:
+        data = json.load(f)
+
+    blocks = data.get("blocks", [])
+    candidates = data.get("candidates", [])
+    raw_registry = data.get("voter_registry", {})
+    candidate_shares = data.get("candidate_shares", {})
+    announced_results = data.get("announced_results", {})
+    election_id = data.get("election_id", "interactive_election")
+
+    voter_registry: dict[str, rsa.RSAPublicKey] = {}
+    for vid, pem_str in raw_registry.items():
+        if pem_str and pem_str.startswith("-----BEGIN"):
+            try:
+                pubkey = serialization.load_pem_public_key(pem_str.encode("utf-8"))
+                if isinstance(pubkey, rsa.RSAPublicKey):
+                    voter_registry[vid] = pubkey
+            except Exception:
+                pass
+
+    auditor = ElectionAuditor(
+        bulletin_blocks=blocks,
+        voter_registry=voter_registry,
+        p=MODP_2048_P,
+        g=MODP_2048_G,
+    )
+
+    report = auditor.run_full_audit(
+        candidates=candidates,
+        candidate_shares=candidate_shares,
+        announced_results=announced_results,
+        election_id=election_id,
+    )
+
+    print_audit_report(report, verbose=verbose)
+    return 0 if report.overall_passed else 1
+
+
 def run_demo_audit(verbose: bool = False) -> int:
     """Execute simulated audit flow for demonstration and testing."""
     print("[*] Running simulated zero-trust audit flow against sample election data...")
@@ -219,6 +273,13 @@ def main() -> None:
         help="Run audit against demo simulation dataset",
     )
     parser.add_argument(
+        "--audit-interactive",
+        "--audit_interactive",
+        dest="audit_interactive",
+        action="store_true",
+        help="Run audit against recent interactive election session data (artifacts/interactive_election_data.json)",
+    )
+    parser.add_argument(
         "--verbose",
         action="store_true",
         help="Print verbose cryptographic check outputs",
@@ -228,6 +289,10 @@ def main() -> None:
 
     if args.demo:
         sys.exit(run_demo_audit(verbose=args.verbose))
+
+    if args.audit_interactive:
+        target_path = args.board_json or "artifacts/interactive_election_data.json"
+        sys.exit(run_interactive_audit(json_path=target_path, verbose=args.verbose))
 
     blocks_data: list[dict[str, Any]] = []
 

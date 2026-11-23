@@ -52,12 +52,14 @@ htmlcov/
 # Documentation builds
 site/
 
-# SQLite databases & temp election data
+# SQLite databases & temp election data / run artifacts
 *.db
 *.sqlite
 *.sqlite3
 election.db
 audit_report.json
+interactive_election_data.json
+artifacts/
 
 # IDEs & Editors
 .vscode/
@@ -69,3 +71,4 @@ audit_report.json
 
 #docs
 ARCHITECTURE_AND_CRYPTO_GUIDE.md
+RELATORIO_SISTEMA_VOTACAO.md
