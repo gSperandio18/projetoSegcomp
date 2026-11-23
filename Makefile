@@ -29,7 +29,7 @@ install:
 
 lint:
 	$(RUFF) check src tests bin
-	$(PYLINT) src/evoting
+	$(PYLINT) src/evoting bin
 
 format:
 	$(RUFF) check --fix src tests bin
@@ -46,14 +46,14 @@ docs-build:
 	$(MKDOCS) build
 
 db-init:
-	$(PYTHON) -c "from evoting.storage.database import init_db; init_db()"
+	PYTHONPATH=src $(PYTHON) -c "from evoting.storage.database import init_db; init_db()"
 	@echo "Election SQLite database initialized successfully."
 
 run-demo:
 	PYTHONPATH=src $(PYTHON) bin/election_cli.py
 
 run-audit:
-	PYTHONPATH=src $(PYTHON) bin/audit_cli.py --demo
+	PYTHONPATH=src $(PYTHON) bin/audit_cli.py --demo --verbose
 
 clean:
 	rm -rf build/ dist/ *.egg-info .eggs/
