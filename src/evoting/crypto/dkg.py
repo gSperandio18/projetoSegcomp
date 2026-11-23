@@ -1,11 +1,12 @@
 """Module 3: Distributed Key Generation (DKG) & Threshold Decryption.
 
-Educational stubs and specifications for Multi-Authority Joint Public Key Synthesis,
-Decryption Share Computation, and Homomorphic Tally Discrete Log Recovery.
-Assigned to: Integrante 3 (Dev C)
+Specifications for Multi-Authority Joint Public Key Synthesis, Decryption
+Share Computation, and Homomorphic Tally Discrete Log Recovery.
 """
 
-from evoting.config.params import MAX_DISCRETE_LOG_BOUND, MODP_2048_G, MODP_2048_P
+import secrets
+
+from evoting.config.params import MAX_DISCRETE_LOG_BOUND, MIN_AUTHORITIES, MODP_2048_G, MODP_2048_P
 from evoting.crypto.elgamal import EncryptedVote
 
 
@@ -38,16 +39,12 @@ def generate_authority_keypair(
     Security Pitfalls:
     - Authority private key x_i must NEVER leave the authority's memory/secure enclave.
     - Weak randomness in x_i enables recovery of the entire election private key.
-
-    TODO (Module 3 - Dev C):
-    1. Sample `x_i = secrets.randbelow(p - 3) + 2`.
-    2. Compute `h_i = pow(g, x_i, p)`.
-    3. Return `(x_i, h_i)`.
     """
-    # TODO: Implement authority keypair generation
-    raise NotImplementedError(
-        "TODO (Module 3 - Dev C): Implement generate_authority_keypair using secrets."
-    )
+
+    x_i = secrets.randbelow(p - 3) + 2
+    h_i = pow(g, x_i, p)
+
+    return (x_i, h_i)
 
 
 def compute_joint_public_key(
@@ -86,16 +83,18 @@ def compute_joint_public_key(
     - Rogue-key attack: Ensure all public shares are valid members of the group
       (1 < h_i < p - 1) and that no authority can manipulate their share after seeing others.
     - Missing threshold check: An election must require at least N >= 3 authorities.
-
-    TODO (Module 3 - Dev C):
-    1. Validate `len(public_shares) >= MIN_AUTHORITIES`.
-    2. Multiply all shares modulo p: `h = prod(shares) % p`.
-    3. Return h.
     """
-    # TODO: Implement joint public key synthesis
-    raise NotImplementedError(
-        "TODO (Module 3 - Dev C): Implement compute_joint_public_key with >= 3 authorities."
-    )
+
+    # guardrail: número mínimo de autoridades
+    if len(public_shares) < MIN_AUTHORITIES:
+        raise ValueError("Número insuficiente de chaves de autoridade")
+
+    # cálculo da chave pública conjunta; prod(h_i) mod p =  g^(soma(x_i)) mod p
+    h = 1
+    for key_share in public_shares:
+        h = (h * key_share) % p
+
+    return h
 
 
 def compute_partial_decryption_share(
@@ -128,15 +127,11 @@ def compute_partial_decryption_share(
     - Authorities should only compute decryption shares for the FINAL aggregated tally,
       NEVER for individual ballots. Computing D_i on individual ballots allows voter coercion
       and destroys ballot secrecy.
-
-    TODO (Module 3 - Dev C):
-    1. Compute `D_i = pow(tally_cipher.c1, private_key_x, p)`.
-    2. Return D_i.
     """
-    # TODO: Implement partial decryption share computation
-    raise NotImplementedError(
-        "TODO (Module 3 - Dev C): Implement compute_partial_decryption_share."
-    )
+
+    # raiz primitiva elevada a (bliding factor R + chave privada de autoridade)
+    d_i = pow(tally_cipher.c1, private_key_x, p)
+    return d_i
 
 
 def combine_decryption_shares_and_recover(
@@ -188,21 +183,27 @@ def combine_decryption_shares_and_recover(
     - Missing authority: If any authority share is absent or forged, W != g^M.
       The bounded discrete logarithm will fail to match any M in range, raising ValueError.
     - Infinite loops: Always enforce `max_expected_votes` limit on brute-force / baby-step search.
-
-    TODO (Module 3 - Dev C):
-    1. Guardrail: verify `if len(shares) < MIN_AUTHORITIES: raise ValueError(...)`.
-    2. Compute `d_product = 1`; for share in shares: `d_product = (d_product * share) % p`.
-    3. Compute modular inverse: `inv_d = pow(d_product, -1, p)`.
-    4. Compute `target_gm = (tally_cipher.c2 * inv_d) % p`.
-    5. Search for M: iterate `current_val = 1` for `m in range(max_expected_votes + 1)`:
-       if `current_val == target_gm`, return m.
-       `current_val = (current_val * g) % p`.
-    6. If loop finishes without match, raise `ValueError("Discrete log recovery failed")`.
     """
-    # TODO: Implement threshold combination and discrete log recovery
-    raise NotImplementedError(
-        "TODO (Module 3 - Dev C): Implement combine_decryption_shares_and_recover."
-    )
+
+    # guardrail: número mínimo de autoridades
+    if len(shares) < MIN_AUTHORITIES:
+        raise ValueError("Número insuficiente de chaves de autoridade")
+
+    # cálculo do produto homomórfico
+    d_product = compute_joint_public_key(shares, p)
+    d_inv = pow(d_product, -1, p)
+
+    target_gm = (tally_cipher.c2 * d_inv) % p
+
+    # busca da potência de g usada na criptografia
+    current_val = 1
+    for m in range(max_expected_votes + 1):
+        if current_val == target_gm:
+            return m
+
+        current_val = (current_val * g) % p
+
+    raise ValueError("Recuperação por logaritmo discreto falhou")
 
 
 __all__ = [

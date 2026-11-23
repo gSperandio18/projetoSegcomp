@@ -1,8 +1,7 @@
 """Module 3: Election Authority Entity & Orchestration.
 
 Full implementation of authority metadata, key ceremony state, and partial
-decryption share packaging alongside educational DKG stubs.
-Assigned to: Integrante 3 (Dev C)
+decryption share packaging.
 """
 
 from dataclasses import dataclass
@@ -71,12 +70,8 @@ class ElectionAuthority:
 
     def _setup_keys(self) -> None:
         """Execute key ceremony step to obtain private and public shares."""
-        try:
-            self._private_key_x, self.public_key_h = generate_authority_keypair(self.p, self.g)
-        except NotImplementedError:
-            # Pedagogical fallback if student has not implemented generate_authority_keypair
-            self._private_key_x = None
-            self.public_key_h = 0
+
+        self._private_key_x, self.public_key_h = generate_authority_keypair(self.p, self.g)
 
     @property
     def private_key_x(self) -> int | None:
@@ -96,11 +91,7 @@ class ElectionAuthority:
         int
             Partial decryption share D_i.
         """
-        if self._private_key_x is None:
-            raise NotImplementedError(
-                f"Authority {self.authority_id} has no private key. Student must implement "
-                "generate_authority_keypair and compute_partial_decryption_share in Module 3."
-            )
+
         return compute_partial_decryption_share(tally_cipher, self._private_key_x, self.p)
 
     def persist_authority(self, db_path: str | None = None) -> AuthorityDTO:
