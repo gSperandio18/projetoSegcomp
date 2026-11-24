@@ -1,6 +1,5 @@
 # Sistema de Votação Eletrônica Auditável e Segura (SegComp 2026)
 
-[![CI & Quality Assurance](https://github.com/projetoSegcomp/actions/workflows/ci.yml/badge.svg)](https://github.com/projetoSegcomp/actions)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/)
 [![Code Style: Ruff](https://img.shields.io/badge/code%20style-ruff-000000.svg)](https://github.com/astral-sh/ruff)
 [![Coverage: >=80%](https://img.shields.io/badge/coverage-%3E%3D80%25-green.svg)](https://pytest-cov.readthedocs.io/)
@@ -10,7 +9,51 @@ Projeto prático desenvolvido para a disciplina de **Segurança Computacional (S
 
 ---
 
-## 1. Visão Geral do Projeto
+## 1. Guia de Instalação e Execução
+
+O projeto conta com automação via `Makefile` para facilitar o fluxo de desenvolvimento. \
+Abaixo estão os comandos essenciais para instalação e execução (de preferência, execute em shell linux):
+
+```bash
+# 1. Exibir ajuda de comandos disponíveis
+make help
+
+# 2. Instalar dependências principais e de desenvolvimento
+make install
+
+# 3. Executar a suíte de testes com verificação de cobertura (mínimo 80%)
+make test
+
+# 4. Gerar relatório visual de cobertura em HTML (abrir em htmlcov/index.html)
+make cov-html
+
+# 5. Executar a simulação automática de eleição
+make run-demo
+
+# 6. Executar a simulação interativa de eleição (Demonstração Completa)
+make run-interactive
+
+# 7. Executar a auditoria pública independente
+make run-audit
+
+# 8. Limpar caches, arquivos temporários e relatórios
+make clean
+```
+
+Para uma simulação simples, siga os passos:
+1. Instale as dependências com `make install`;
+2. Simule uma eleição com `make run-demo` ou `make run-interactive`;
+3. Execute a auditoria da votação realizada com `make run-audit`.
+
+A simulação automática de eleição considera 2 candidatos, Alice e Bob, e 3 eleitores, voter_001, voter_002 e voter_003. Na versão interativa, o sistema espera entradas para definir os candidatos, ids de eleitores e seus votos.
+
+Em ambas as simulações, todas as cerimônias da eleição são realizadas, são aplicadas todas as etapas de criptografia e asseguradas todas as proprieadades declaradas no relatório do projeto.
+
+O script de auditoria garante a verificação independente apenas com os dados públicos registrados após a eleição simulada.
+
+---
+
+## 2. Visão Geral do Projeto
 
 Este projeto consiste em um sistema de votação eletrônica de ponta a ponta verificável (*End-to-End Verifiable E-Voting System*). O sistema garante simultaneamente:
 
@@ -23,7 +66,7 @@ Este projeto consiste em um sistema de votação eletrônica de ponta a ponta ve
 
 ---
 
-## 2. Arquitetura Criptográfica e Divisão em 5 Módulos
+## 3. Arquitetura Criptográfica e Divisão em 5 Módulos
 
 O código-fonte em `src/evoting/` está estritamente estruturado em 5 módulos de igual complexidade técnica:
 
@@ -54,47 +97,6 @@ src/evoting/
 
 ---
 
-## 3. Guia Rápido de Instalação e Execução
-
-O projeto conta com automação via `Makefile` para facilitar o fluxo de desenvolvimento:
-
-```bash
-# 1. Exibir ajuda de comandos disponíveis
-make help
-
-# 2. Instalar dependências principais e de desenvolvimento
-make install
-
-# 3. Inicializar o banco de dados SQLite local
-make db-init
-
-# 4. Executar os linters (Ruff e Pylint)
-make lint
-
-# 5. Formatar o código automaticamente (Ruff)
-make format
-
-# 6. Executar a suíte de testes com verificação de cobertura (mínimo 80%)
-make test
-
-# 7. Gerar relatório visual de cobertura em HTML (abrir em htmlcov/index.html)
-make cov-html
-
-# 8. Construir a documentação técnica (MkDocs)
-make docs-build
-
-# 9. Executar a simulação interativa da eleição (Demonstração Completa)
-make run-demo
-
-# 10. Executar a auditoria pública independente
-make run-audit
-
-# 11. Limpar caches, arquivos temporários e relatórios
-make clean
-```
-
----
-
 ## 4. Fluxo de Testes e Cobertura (>= 80%)
 
 A integridade do código e a conformidade dos módulos são garantidas via `pytest` com a extensão `pytest-cov`:
@@ -103,8 +105,7 @@ A integridade do código e a conformidade dos módulos são garantidas via `pyte
 pytest --cov=src/evoting --cov-report=term-missing --cov-fail-under=80
 ```
 
-- A suíte de testes em `tests/` testa exaustivamente os modelos, serialização, banco de dados, fluxo de registro e CLI.
-- Para cada função criptográfica que for implementada pelos integrantes, testes unitários dedicados baseados em TDD já estão estruturados em `tests/test_*.py` com instruções claras de asserções nos comentários `# TODO:`.
+A suíte de testes em `tests/` testa exaustivamente os modelos, serialização, banco de dados, fluxo de registro e CLI.
 
 ---
 
@@ -156,20 +157,6 @@ O script `bin/election_cli.py` (ou `make run-demo`) orquestra o roteiro completo
 
 ---
 
-## 7. Quadro Kanban / Backlog de Tarefas (GitHub Projects)
-
-A matriz de atribuições divide o trabalho de forma balanceada entre os 5 integrantes:
-
-| Integrante | Módulo / Área | Tarefa Técnica (Issues do GitHub Projects) | Arquivos sob Custódia |
-|---|---|---|---|
-| **Integrante 1 (Dev A)** | **Módulo 1: Identidade & Assinaturas RSA** | - Implementar `generate_voter_rsa_keypair(key_size=2048)`.<br/>- Implementar `canonicalize_payload(payload)` determinístico.<br/>- Implementar `sign_ballot_payload` e `verify_ballot_signature` com RSA-PSS e SHA-256.<br/>- Implementar `check_voter_eligibility_and_unicity`.<br/>- Ativar e validar os testes unitários em `tests/test_rsa_signatures.py`. | `src/evoting/crypto/rsa.py`<br/>`src/evoting/voter.py`<br/>`tests/test_rsa_signatures.py` |
-| **Integrante 2 (Dev B)** | **Módulo 2: Cifração Homomórfica de Cédulas** | - Implementar `sample_random_blinding_factor(p)` usando `secrets`.<br/>- Implementar `encrypt_vote(m, h, p, g)` com Exponential ElGamal e guardrail $m \in \{0, 1\}$.<br/>- Implementar `homomorphic_multiply_ciphertexts(ciphers, p)` garantindo redução modular.<br/>- Integrar cédulas multicandidato com `ballot.py`.<br/>- Ativar e validar os testes unitários em `tests/test_elgamal_encryption.py`. | `src/evoting/crypto/elgamal.py`<br/>`src/evoting/ballot.py`<br/>`tests/test_elgamal_encryption.py` |
-| **Integrante 3 (Dev C)** | **Módulo 3: Autoridades e DKG** | - Implementar `generate_authority_keypair(p, g)` ($x_i, h_i = g^{x_i} \bmod p$).<br/>- Implementar `compute_joint_public_key(shares, p)` ($h = \prod h_i \bmod p$).<br/>- Implementar `compute_partial_decryption_share(tally, x_i, p)` ($D_i = C_1^{x_i} \bmod p$).<br/>- Implementar `combine_decryption_shares_and_recover` com inverso modular e log discreto.<br/>- Ativar e validar os testes em `tests/test_joint_decryption.py`. | `src/evoting/crypto/dkg.py`<br/>`src/evoting/authority.py`<br/>`tests/test_joint_decryption.py` |
-| **Integrante 4 (Dev D)** | **Módulo 4: Quadro Público & Recibos** | - Implementar `compute_block_hash` com SHA-256 e concatenação canônica.<br/>- Implementar `verify_chain_integrity` para detecção de adulteração.<br/>- Implementar `issue_voter_receipt` assinado pelo servidor **omitindo $r$** (resistência à coerção).<br/>- Implementar `verify_receipt` com chave pública do servidor.<br/>- Ativar e validar os testes em `tests/test_bulletin_board.py`. | `src/evoting/bulletin_board.py`<br/>`src/evoting/receipt.py`<br/>`tests/test_bulletin_board.py` |
-| **Integrante 5 (Dev E)** | **Módulo 5: Auditoria de Confiança Zero & CLI** | - Implementar `audit_hash_chain_integrity` e `audit_voter_signatures_and_unicity`.<br/>- Implementar `audit_homomorphic_tally_aggregation` e `audit_decryption_shares_and_results`.<br/>- Polir argumentos e saída da CLI em `bin/audit_cli.py`.<br/>- Ativar e validar os testes em `tests/test_audit_engine.py`. | `src/evoting/auditor.py`<br/>`bin/audit_cli.py`<br/>`tests/test_audit_engine.py` |
-
----
-
-## 8. Licença e Autoria
+## 7. Licença e Autoria
 
 Este projeto é desenvolvido para fins acadêmicos na disciplina de Segurança Computacional (2026). Consulte o arquivo `LICENSE` para termos de uso.

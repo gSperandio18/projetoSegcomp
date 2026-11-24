@@ -1,4 +1,4 @@
-.PHONY: help install lint format test cov-html docs-build db-init run-demo run-audit clean
+.PHONY: help install lint format test cov-html docs-build db-init run-demo run-interactive run-audit run-audit-interactive clean
 
 PYTHON := python3
 PIP := $(PYTHON) -m pip
@@ -18,8 +18,10 @@ help:
 	@echo "  make cov-html    : Generate HTML coverage report"
 	@echo "  make docs-build  : Build technical documentation via MkDocs"
 	@echo "  make db-init     : Initialize SQLite schema for election server"
-	@echo "  make run-demo    : Run complete CLI election simulation (Interactive)"
-	@echo "  make run-audit   : Run independent audit script against public board"
+	@echo "  make run-demo              : Run complete CLI election simulation (8-stage demo)"
+	@echo "  make run-interactive       : Run user-friendly interactive terminal voting session"
+	@echo "  make run-audit             : Run independent audit script against public demo data"
+	@echo "  make run-audit-interactive : Run independent audit against interactive election data"
 	@echo "  make clean       : Remove temporary cache, coverage, and build artifacts"
 	@echo "========================================================================"
 
@@ -29,7 +31,7 @@ install:
 
 lint:
 	$(RUFF) check src tests bin
-	$(PYLINT) src/evoting
+	$(PYLINT) src/evoting bin
 
 format:
 	$(RUFF) check --fix src tests bin
@@ -46,21 +48,28 @@ docs-build:
 	$(MKDOCS) build
 
 db-init:
-	$(PYTHON) -c "from evoting.storage.database import init_db; init_db()"
+	PYTHONPATH=src $(PYTHON) -c "from evoting.storage.database import init_db; init_db()"
 	@echo "Election SQLite database initialized successfully."
 
 run-demo:
 	PYTHONPATH=src $(PYTHON) bin/election_cli.py
 
+run-interactive:
+	PYTHONPATH=src $(PYTHON) bin/interactive_election.py
+
 run-audit:
-	PYTHONPATH=src $(PYTHON) bin/audit_cli.py --demo
+	PYTHONPATH=src $(PYTHON) bin/audit_cli.py --demo --verbose
+
+run-audit-interactive:
+	PYTHONPATH=src $(PYTHON) bin/audit_cli.py --audit_interactive --verbose
 
 clean:
 	rm -rf build/ dist/ *.egg-info .eggs/
 	rm -rf .pytest_cache/ htmlcov/ .coverage coverage.xml
 	rm -rf .ruff_cache/
 	rm -rf site/
-	rm -f election.db audit_report.json
+	rm -rf artifacts/
+	rm -f election.db audit_report.json interactive_election_data.json
 	find . -type d -name "__pycache__" -exec rm -rf {} +
 	find . -type f -name "*.py[cod]" -delete
 	@echo "Workspace cleaned successfully."

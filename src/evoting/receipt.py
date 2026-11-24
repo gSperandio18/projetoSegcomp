@@ -1,15 +1,18 @@
 """Module 4: Coercion-Resistant Voter Receipts.
 
-Full implementation of receipt containers and verification models alongside
-educational cryptographic stubs for server-signed receipts.
+Full implementation of receipt containers, verification models, and
+RSA-PSS server-signed receipt issuance and verification.
 Assigned to: Integrante 4 (Dev D)
 """
 
 import json
 from dataclasses import asdict, dataclass
+from datetime import datetime, timezone
 from typing import Any
 
-from cryptography.hazmat.primitives.asymmetric import rsa
+from cryptography.exceptions import InvalidSignature
+from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.primitives.asymmetric import padding, rsa
 
 from evoting.bulletin_board import BulletinBlock
 
@@ -53,6 +56,11 @@ class VoterReceipt:
         )
 
 
+def _build_receipt_message(block_index: int, block_hash: str, voter_id: str) -> bytes:
+    """Build deterministic UTF-8 message bytes for server receipt signing/verification."""
+    return f"{block_index}:{block_hash}:{voter_id}".encode()
+
+
 def issue_voter_receipt(
     block: BulletinBlock,
     server_private_key: rsa.RSAPrivateKey,
@@ -80,17 +88,25 @@ def issue_voter_receipt(
     Security Pitfalls:
     - Never include ElGamal randomizer r or plaintext choices! If included, vote buyers
       can compel the voter to surrender the receipt to verify how they voted.
-    - Deterministic message formatting prevents receipt forgery.
+    - Deterministic message formatting prevents receipt forgery."""
+    message = _build_receipt_message(block.index, block.block_hash, block.voter_id)
 
-    TODO (Module 4 - Dev D):
-    1. Construct canonical message bytes:
-       `f"{block.index}:{block.block_hash}:{block.voter_id}".encode("utf-8")`.
-    2. Sign message bytes using `server_private_key.sign(msg, padding.PSS(...), hashes.SHA256())`.
-    3. Construct and return `VoterReceipt`.
-    """
-    # TODO: Implement server receipt signing
-    raise NotImplementedError(
-        "TODO (Module 4 - Dev D): Implement issue_voter_receipt using server RSA-PSS signature."
+    signature_bytes = server_private_key.sign(
+        message,
+        padding.PSS(
+            mgf=padding.MGF1(hashes.SHA256()),
+            salt_length=padding.PSS.MAX_LENGTH,
+        ),
+        hashes.SHA256(),
+    )
+
+    return VoterReceipt(
+        receipt_id=f"rcpt_{block.index}_{block.block_hash[:8]}",
+        block_index=block.index,
+        voter_id=block.voter_id,
+        block_hash=block.block_hash,
+        server_signature_hex=signature_bytes.hex(),
+        issued_at=datetime.now(timezone.utc).isoformat(),
     )
 
 
@@ -110,19 +126,31 @@ def verify_receipt(
     Returns
     -------
     bool
-        True if the signature is valid; False otherwise.
-
-    TODO (Module 4 - Dev D):
-    1. Reconstruct canonical message bytes:
-       `f"{receipt.block_index}:{receipt.block_hash}:{receipt.voter_id}".encode("utf-8")`.
-    2. Decode signature from hex bytes: `bytes.fromhex(receipt.server_signature_hex)`.
-    3. In a try-except block, call `server_public_key.verify(...)`.
-    4. Return True on success; return False if `InvalidSignature` caught.
-    """
-    # TODO: Implement receipt verification
-    raise NotImplementedError(
-        "TODO (Module 4 - Dev D): Implement verify_receipt with server RSA public key."
+        True if the signature is valid; False otherwise."""
+    message = _build_receipt_message(
+        receipt.block_index,
+        receipt.block_hash,
+        receipt.voter_id,
     )
+
+    try:
+        signature_bytes = bytes.fromhex(receipt.server_signature_hex)
+    except ValueError:
+        return False
+
+    try:
+        server_public_key.verify(
+            signature_bytes,
+            message,
+            padding.PSS(
+                mgf=padding.MGF1(hashes.SHA256()),
+                salt_length=padding.PSS.MAX_LENGTH,
+            ),
+            hashes.SHA256(),
+        )
+        return True
+    except InvalidSignature:
+        return False
 
 
 __all__ = [

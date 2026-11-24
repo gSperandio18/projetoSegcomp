@@ -1,10 +1,3 @@
-"""Module 2: Multi-Candidate Ballot Container & Schemas.
-
-Full implementation of ballot schemas, JSON serialization/deserialization,
-and candidate choices validation for Exponential ElGamal voting.
-Assigned to: Integrante 2 (Dev B)
-"""
-
 import json
 from dataclasses import dataclass, field
 from typing import Any
@@ -14,14 +7,11 @@ from evoting.crypto.elgamal import EncryptedVote, encrypt_vote
 
 @dataclass
 class CandidateCiphertext:
-    """Represents the encrypted vote pair (c1, c2) for a specific candidate."""
-
     candidate: str
     c1: int
     c2: int
 
     def to_dict(self) -> dict[str, Any]:
-        """Convert candidate ciphertext to dictionary representation."""
         return {
             "candidate": self.candidate,
             "c1": self.c1,
@@ -30,7 +20,6 @@ class CandidateCiphertext:
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> "CandidateCiphertext":
-        """Reconstruct candidate ciphertext from dictionary."""
         return cls(
             candidate=str(data["candidate"]),
             c1=int(data["c1"]),
@@ -40,36 +29,22 @@ class CandidateCiphertext:
 
 @dataclass
 class BallotContainer:
-    """Container holding encrypted votes for all candidates in an election contest.
-
-    Attributes
-    ----------
-    votes : Dict[str, EncryptedVote]
-        Mapping from candidate name to their EncryptedVote (c1, c2).
-    metadata : Dict[str, Any]
-        Optional election metadata (e.g. contest ID, timestamp).
-    """
-
     votes: dict[str, EncryptedVote] = field(default_factory=dict)
     metadata: dict[str, Any] = field(default_factory=dict)
 
     def add_candidate_vote(self, candidate: str, cipher: EncryptedVote) -> None:
-        """Add an encrypted vote for a candidate."""
         self.votes[candidate] = cipher
 
     def to_dict(self) -> dict[str, dict[str, int]]:
-        """Serialize ballot votes to dictionary format suitable for signing and ledger storage."""
         return {
             cand: {"c1": cipher.c1, "c2": cipher.c2} for cand, cipher in sorted(self.votes.items())
         }
 
     def to_json(self) -> str:
-        """Serialize ballot to deterministic canonical JSON string."""
         return json.dumps(self.to_dict(), sort_keys=True)
 
     @classmethod
     def from_dict(cls, data: dict[str, dict[str, int]]) -> "BallotContainer":
-        """Deserialize ballot container from dictionary."""
         container = cls()
         for cand, c_dict in data.items():
             cipher = EncryptedVote(c1=int(c_dict["c1"]), c2=int(c_dict["c2"]))
@@ -84,28 +59,20 @@ class BallotContainer:
         p: int,
         g: int,
     ) -> "BallotContainer":
-        """Factory method to construct an encrypted ballot across candidates.
+        if any(
+            type(vote_bit) is not int or vote_bit not in (0, 1)
+            for vote_bit in candidate_choices.values()
+        ):
+            raise ValueError("Each candidate vote must be 0 or 1")
 
-        Parameters
-        ----------
-        candidate_choices : Dict[str, int]
-            Mapping candidate name to binary vote bit (0 or 1).
-        joint_public_key_h : int
-            The election joint public key.
-        p : int
-            Group prime modulus.
-        g : int
-            Subgroup generator.
+        if sum(candidate_choices.values()) != 1:
+            raise ValueError("Select exactly one candidate")
 
-        Returns
-        -------
-        BallotContainer
-            Constructed ballot with encrypted votes.
-        """
         container = cls()
         for candidate, vote_bit in candidate_choices.items():
             cipher = encrypt_vote(vote_bit, joint_public_key_h, p, g)
             container.add_candidate_vote(candidate, cipher)
+
         return container
 
 

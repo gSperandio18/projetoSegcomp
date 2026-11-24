@@ -1,16 +1,18 @@
 """Module 4: Append-Only Verifiable Public Bulletin Board.
 
-Full implementation of ledger data structures, genesis block setup, and database
-persistence hooks alongside educational SHA-256 hash-chaining stubs.
+Full implementation of ledger data structures, genesis block setup, database
+persistence hooks, and SHA-256 hash-chaining verification.
 Assigned to: Integrante 4 (Dev D)
 """
 
+import hashlib
 import json
 from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
 from typing import Any
 
 from evoting.config.params import GENESIS_PREVIOUS_HASH
+from evoting.crypto.rsa import canonicalize_payload
 from evoting.storage.database import get_db_session, save_bulletin_block
 
 
@@ -102,18 +104,31 @@ def compute_block_hash(
     Security Pitfalls:
     - Omission of voter_signature or timestamp in the hash allows signature substitution attacks.
     - Ambiguous delimiter concatenation: concatenating raw strings without canonical serialization
-      can allow extension attacks.
+      can allow extension attacks."""
+    try:
+        canonical_ballot_bytes = canonicalize_payload(ballot_data)
+    except NotImplementedError:
+        canonical_ballot_bytes = json.dumps(
+            ballot_data,
+            sort_keys=True,
+            separators=(",", ":"),
+        ).encode("utf-8")
 
-    TODO (Module 4 - Dev D):
-    1. Canonicalize `ballot_data` to bytes using `canonicalize_payload(ballot_data)`.
-    2. Build composite byte string incorporating all fields deterministically.
-    3. Compute SHA-256 digest using `hashlib.sha256()`.
-    4. Return `.hexdigest()`.
-    """
-    # TODO: Implement SHA-256 block hash computation
-    raise NotImplementedError(
-        "TODO (Module 4 - Dev D): Implement compute_block_hash using hashlib.sha256."
-    )
+    canonical_ballot_str = canonical_ballot_bytes.decode("utf-8")
+
+    composite_payload = json.dumps(
+        [
+            previous_hash,
+            index,
+            voter_id,
+            canonical_ballot_str,
+            voter_signature_hex,
+            timestamp,
+        ],
+        separators=(",", ":"),
+    ).encode("utf-8")
+
+    return hashlib.sha256(composite_payload).hexdigest()
 
 
 class AppendOnlyBulletinBoard:
@@ -233,18 +248,34 @@ class AppendOnlyBulletinBoard:
         2. For every k >= 1:
            block[k].previous_hash == block[k - 1].block_hash.
         3. For every block k:
-           block[k].block_hash == compute_block_hash(...block[k] fields...).
+           block[k].block_hash == compute_block_hash(...block[k] fields...)."""
+        if not self.chain:
+            return False
 
-        TODO (Module 4 - Dev D):
-        1. Iterate through self.chain from 0 to len(self.chain) - 1.
-        2. Check previous_hash linkages.
-        3. Recompute block hash using `compute_block_hash` and compare with stored block_hash.
-        4. If any comparison fails, return False; return True if all valid.
-        """
-        # TODO: Implement chain integrity verification
-        raise NotImplementedError(
-            "TODO (Module 4 - Dev D): Implement verify_chain_integrity for tamper detection."
-        )
+        for expected_index, block in enumerate(self.chain):
+            if block.index != expected_index:
+                return False
+
+            if expected_index == 0:
+                if block.previous_hash != GENESIS_PREVIOUS_HASH:
+                    return False
+            else:
+                prev_block = self.chain[expected_index - 1]
+                if block.previous_hash != prev_block.block_hash:
+                    return False
+
+            recomputed_hash = compute_block_hash(
+                previous_hash=block.previous_hash,
+                index=block.index,
+                voter_id=block.voter_id,
+                ballot_data=block.ballot_data,
+                voter_signature_hex=block.voter_signature_hex,
+                timestamp=block.timestamp,
+            )
+            if block.block_hash != recomputed_hash:
+                return False
+
+        return True
 
     def export_chain_json(self) -> str:
         """Export full ledger chain to JSON string."""

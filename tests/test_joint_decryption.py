@@ -2,7 +2,6 @@
 
 Covers non-cryptographic ElectionAuthority metadata/persistence and provides
 TDD test specifications for joint public keys, partial shares, and discrete log recovery.
-Assigned to: Integrante 3 (Dev C)
 """
 
 import pytest
@@ -62,50 +61,92 @@ class TestAuthorityInfrastructure:
             assert auths[0].name == "Auth_Beta"
 
 
-class TestDKGCryptoStubs:
-    """Educational verification: stubs raise NotImplementedError with helpful guidance."""
+def test_authority_generate_keys():
+    ElectionAuthority(1, MODP_2048_P, MODP_2048_G, "TSE", True)
 
-    def test_generate_authority_keypair_stub(self):
-        with pytest.raises(NotImplementedError) as exc_info:
-            generate_authority_keypair(MODP_2048_P, MODP_2048_G)
-        assert "TODO (Module 3 - Dev C)" in str(exc_info.value)
 
-    def test_compute_joint_public_key_stub(self):
-        with pytest.raises(NotImplementedError) as exc_info:
-            compute_joint_public_key([10, 20, 30], MODP_2048_P)
-        assert "TODO (Module 3 - Dev C)" in str(exc_info.value)
+class TestDKGCrypto:
+    def test_generate_authority_keypair(self):
+        (x_i, h_i) = generate_authority_keypair(MODP_2048_P, MODP_2048_G)
+        assert h_i == pow(MODP_2048_G, x_i, MODP_2048_P)
 
-    def test_compute_partial_decryption_share_stub(self):
+    def test_compute_joint_public_key(self):
+        shares = [10, 20, 30]
+        public_key = 1
+        for key_share in shares:
+            public_key = (public_key * key_share) % MODP_2048_P
+
+        h = compute_joint_public_key(shares, MODP_2048_P)
+
+        assert h == public_key
+
+    def test_compute_partial_decryption_share(self):
         cipher = EncryptedVote(100, 200)
-        with pytest.raises(NotImplementedError) as exc_info:
-            compute_partial_decryption_share(cipher, 12345, MODP_2048_P)
-        assert "TODO (Module 3 - Dev C)" in str(exc_info.value)
+        private_key = 12345
+        d = compute_partial_decryption_share(cipher, private_key, MODP_2048_P)
 
-    def test_combine_decryption_shares_stub(self):
-        cipher = EncryptedVote(100, 200)
-        with pytest.raises(NotImplementedError) as exc_info:
-            combine_decryption_shares_and_recover(cipher, [1, 2, 3], MODP_2048_P, MODP_2048_G)
-        assert "TODO (Module 3 - Dev C)" in str(exc_info.value)
+        assert d == pow(cipher.c1, private_key, MODP_2048_P)
+
+    def test_combine_decryption_shares(self):
+        import secrets
+
+        # par de chaves de autoridades
+        keypairs = [
+            generate_authority_keypair(MODP_2048_P, MODP_2048_G),
+            generate_authority_keypair(MODP_2048_P, MODP_2048_G),
+            generate_authority_keypair(MODP_2048_P, MODP_2048_G),
+        ]
+
+        # soma dos chaves privadas (expoentes)
+        key_sum = 0
+        for kp in keypairs:
+            key_sum += kp[0]
+
+        # chave conjunta
+        h = compute_joint_public_key([keypairs[0][1], keypairs[1][1], keypairs[2][1]], MODP_2048_P)
+
+        vote_count = 12
+
+        blinding_factor_r = secrets.randbelow(MODP_2048_P - 3) + 2
+        c1 = pow(MODP_2048_G, blinding_factor_r, MODP_2048_P)
+        gm = pow(MODP_2048_G, vote_count, MODP_2048_P)
+        hr = pow(h, blinding_factor_r, MODP_2048_P)
+        c2 = (gm * hr) % MODP_2048_P
+        cipher = EncryptedVote(c1, c2)
+
+        vote_shares = []
+        for kp in keypairs:
+            vote_shares.append(compute_partial_decryption_share(cipher, kp[0], MODP_2048_P))
+
+        # TODO: arrumar teste da decifragem, m sempre dá 1 (implementação de cipher?)
+        m = combine_decryption_shares_and_recover(cipher, vote_shares, MODP_2048_P, MODP_2048_G)
+
+        assert m == vote_count
 
 
-# ==============================================================================
-# TDD Test Templates for Integrante 3 (Dev C) to activate after implementation:
-# ==============================================================================
-# def test_joint_public_key_homomorphic_property():
-#     p = 467
-#     g = 2
-#     x1, x2, x3 = 10, 20, 30
-#     h1 = pow(g, x1, p)
-#     h2 = pow(g, x2, p)
-#     h3 = pow(g, x3, p)
-#     h_joint = compute_joint_public_key([h1, h2, h3], p)
-#     expected_h = pow(g, x1 + x2 + x3, p)
-#     assert h_joint == expected_h
-#
-# def test_incomplete_authorities_fails_decryption():
-#     p = 467
-#     g = 2
-#     cipher = EncryptedVote(100, 200)
-#     # Providing only 2 shares when 3 were involved
-#     with pytest.raises(ValueError):
-#         combine_decryption_shares_and_recover(cipher, [123, 456], p, g, max_expected_votes=10)
+def test_joint_public_key_homomorphic_property():
+    p = 467
+    g = 2
+    x1, x2, x3 = 10, 20, 30
+    h1 = pow(g, x1, p)
+    h2 = pow(g, x2, p)
+    h3 = pow(g, x3, p)
+    h_joint = compute_joint_public_key([h1, h2, h3], p)
+    expected_h = pow(g, x1 + x2 + x3, p)
+    assert h_joint == expected_h
+
+
+def test_incomplete_authorities_fails_joint():
+    p = 467
+    # Providing only 2 shares when 3 were involved
+    with pytest.raises(ValueError):
+        compute_joint_public_key([123, 456], p)
+
+
+def test_incomplete_authorities_fails_decryption():
+    p = 467
+    g = 2
+    cipher = EncryptedVote(100, 200)
+    # Providing only 2 shares when 3 were involved
+    with pytest.raises(ValueError):
+        combine_decryption_shares_and_recover(cipher, [123, 456], p, g, max_expected_votes=10)
