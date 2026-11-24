@@ -43,7 +43,8 @@ make clean
 Para uma simulação simples, siga os passos:
 1. Instale as dependências com `make install`;
 2. Simule uma eleição com `make run-demo` ou `make run-interactive`;
-3. Execute a auditoria da votação realizada com `make run-audit`.
+3. Execute a auditoria da votação simulada realizada com `make run-audit`.
+4. Execute a auditoria da votação interativa realizada com `make run-audit-interactive`
 
 A simulação automática de eleição considera 2 candidatos, Alice e Bob, e 3 eleitores, voter_001, voter_002 e voter_003. Na versão interativa, o sistema espera entradas para definir os candidatos, ids de eleitores e seus votos.
 
@@ -102,7 +103,7 @@ src/evoting/
 A integridade do código e a conformidade dos módulos são garantidas via `pytest` com a extensão `pytest-cov`:
 
 ```bash
-pytest --cov=src/evoting --cov-report=term-missing --cov-fail-under=80
+make test
 ```
 
 A suíte de testes em `tests/` testa exaustivamente os modelos, serialização, banco de dados, fluxo de registro e CLI.
